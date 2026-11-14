@@ -80,6 +80,18 @@
                                      },
                         "versions":  [
                                          {
+                                             "version":  "1.2.4",
+                                             "publishTimestamp":  1794687039,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/mordoreay/dsh-capri",
+                                                            "commit":  "70dd01c167f287a17f60309fea20846fca9d9644"
+                                                        },
+                                             "engines":  {
+
+                                                         }
+                                         },
+                                         {
                                              "version":  "1.2.3",
                                              "publishTimestamp":  1794686858,
                                              "source":  {
