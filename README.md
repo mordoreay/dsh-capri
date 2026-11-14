@@ -1,4 +1,7 @@
-**English** | [Русский](README.ru.md)
+<p align="center">
+  <a href="README.md"><img src="docs/lang/en.svg" height="28" alt="English"></a>
+  <a href="README.ru.md"><img src="docs/lang/ru.svg" height="28" alt="Русский"></a>
+</p>
 
 # Capri for DeepSeek Harness
 
@@ -6,7 +9,9 @@ Capri — the *Project Capricorn* construct from Cyberpunk: Edgerunners — live
 DeepSeek Harness window and tells you what the agent is doing: an action ticker, a line in her own
 voice, a panel with her face, and a mode for when the agent needs your decision.
 
-![Her frames, all clips at once](docs/all-clips.png)
+<p align="center">
+  <img src="docs/capri.png" width="230" alt="Capri">
+</p>
 
 > **Unofficial adaptation.** This repository is a DeepSeek Harness port of
 > [**mochiiwuff/capri-desktop**](https://github.com/mochiiwuff/capri-desktop): the same character, the

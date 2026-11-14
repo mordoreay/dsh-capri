@@ -1,4 +1,7 @@
-[English](README.md) | **Русский**
+<p align="center">
+  <a href="README.ru.md"><img src="docs/lang/ru.svg" height="28" alt="Русский"></a>
+  <a href="README.md"><img src="docs/lang/en.svg" height="28" alt="English"></a>
+</p>
 
 # Capri для DeepSeek Harness
 
@@ -6,7 +9,9 @@
 и рассказывает, чем занят агент: тикер действия, реплика её голосом, панель с её лицом и отдельный
 режим для случая, когда агенту нужно твоё решение.
 
-![Все её клипы разом](docs/all-clips.png)
+<p align="center">
+  <img src="docs/capri.png" width="230" alt="Capri">
+</p>
 
 > **Неофициальная адаптация.** Это порт [**mochiiwuff/capri-desktop**](https://github.com/mochiiwuff/capri-desktop)
 > под DeepSeek Harness: тот же персонаж, те же позы и те же тексты, но рендер внутри окна DSH, без
