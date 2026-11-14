@@ -85,7 +85,7 @@
                                              "source":  {
                                                             "type":  "git",
                                                             "url":  "https://github.com/mordoreay/dsh-capri",
-                                                            "commit":  "1021997a5b6189d0f527a9c5aa5b9e76368d0ba4"
+                                                            "commit":  "8b436fe2062dbd0ea00fa4a7f52802736a769ab2"
                                                         },
                                              "engines":  {
 
