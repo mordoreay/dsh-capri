@@ -1,4 +1,4 @@
-﻿"""Builds one contact sheet of every rendered clip: three drawings per act, two acts per row.
+"""Builds one contact sheet of every rendered clip: three drawings per act, two acts per row.
 
 Not a motion test (that is what the app does) but a look at all 22 clips at once: every drawing
 decodes, nothing is blank, cropped or mirrored by accident.

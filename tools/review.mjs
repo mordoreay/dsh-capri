@@ -1,4 +1,4 @@
-﻿// Review harness: runs the host half in a fake Cordis context and calls the real routes.
+// Review harness: runs the host half in a fake Cordis context and calls the real routes.
 // Verifies the security guards (origin + Host, POST-only mutations) and the settings clamps.
 import { Readable } from 'node:stream'
 import os from 'node:os'

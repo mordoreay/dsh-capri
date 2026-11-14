@@ -1,4 +1,4 @@
-﻿// Verifies every clip the plugin can play, without a browser:
+// Verifies every clip the plugin can play, without a browser:
 //  - each step names a PNG that exists, decodes as a 708x978 RGBA image, and is not empty
 //  - each clip actually animates (its drawings are not all the same picture)
 //  - the timing adds up and loop/one-shot flags match what the scene machine expects
