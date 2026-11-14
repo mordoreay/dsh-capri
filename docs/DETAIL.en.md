@@ -23,6 +23,11 @@ and the same character, drawn inside the DSH window, with no second Electron pro
   face and stays until you answer. Can be turned off in settings.
 - **Rest**: with nothing to do she falls asleep (240 seconds of quiet).
 - **Click her** for a reaction.
+- **Drag her**: pick her up with the mouse and put her anywhere — she plays `grabbed` while held and
+  `land` when released; the release does not count as a poke.
+- **Turn summary**: when a turn ends the panel shows what it cost — actions, files, time.
+- **Her own session only**: subagent turns and approvals are ignored, so she does not celebrate someone
+  else's work or raise the alarm for nothing.
 - **Sound**: quiet cues from the original's own synth engine (Web Audio, no audio files) — a blip on a
   line, a tick while working, the alarm, the victory, an error, a purr when you pet her. Turned on and
   levelled in settings; the first cue needs a click in the window, that is the browser's rule.

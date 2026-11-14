@@ -224,6 +224,49 @@ check('turn end: both paths do not double-fire', afterBoth.mode === 'done' && af
 const seenTurns = await (await getConfig(headers())).json()
 check('turn end: counted', seenTurns.turns === 1, String(seenTurns.turns))
 
+// ── quick wins: turn summary, subagents, cancelled approvals, ko, dragging ────────────────────
+// the victory dedupe window is 400 ms: a second turn cannot celebrate inside it
+await new Promise((resolve) => setTimeout(resolve, 500))
+pre({ name: 'read', arguments: { file_path: 'C:/x/one.ts' }, agent: fakeAgent }, () => {})
+pre({ name: 'edit', arguments: { file_path: 'C:/x/two.ts' }, agent: fakeAgent }, () => {})
+pre({ name: 'edit', arguments: { file_path: 'C:/x/three.ts' }, agent: fakeAgent }, () => {})
+agentCtxEvents.get('agent/turn-stopping')[0]({ turn: {} })
+const summaryState = await (await getState(headers())).json()
+check('summary: actions, files and time land in the deed',
+  /3\s+действи/.test(summaryState.deed) && /2\s+файл/.test(summaryState.deed) && /\d+\s+с/.test(summaryState.deed),
+  summaryState.deed)
+
+approval({ id: 'child-1' }, { type: 'subagent/descriptor', data: { version: 3, mode: 'local', provider: 'test' } })
+approval({ id: 'child-1' }, { type: 'approval/asked', data: { id: 'sub-1', toolName: 'write' } })
+const subState = await (await getState(headers())).json()
+check('subagent: its approval does not raise the alarm', subState.mode !== 'alert', `${subState.mode}/${subState.act}`)
+const subCfg = await (await getConfig(headers())).json()
+check('subagent: its approval is not counted', subCfg.approvals === 2, String(subCfg.approvals))
+
+approval({ id: 's' }, { type: 'approval/asked', data: { id: 'a3', toolName: 'pwsh' } })
+approval({ id: 's' }, { type: 'approval/decided', data: { id: 'a3', outcome: 'cancelled' } })
+const shakeState = await (await getState(headers())).json()
+check('approval: cancelled -> she shakes it off', shakeState.act === 'shake', shakeState.act)
+
+onResult({}, { isError: true })
+onResult({}, { isError: true })
+onResult({}, { isError: true })
+const koState = await (await getState(headers())).json()
+check('error: three in a row knocks her down', koState.act === 'ko' && koState.mode === 'error', `${koState.mode}/${koState.act}`)
+onResult({}, { isError: false })
+const hopState = await (await getState(headers())).json()
+check('error: a fixed failure makes her hop', hopState.act === 'hop', hopState.act)
+
+const beforeTouch = await (await getState(headers())).json()
+const touchGrab = await callPost('/capri/touch', { act: 'grabbed' }, headers())
+check('touch: a drag plays grabbed', touchGrab.status === 200 && touchGrab.json.act === 'grabbed', String(touchGrab.status))
+const touchState = await (await getState(headers())).json()
+check('touch: it does not rewrite the caption', String(touchState.line) === String(beforeTouch.line), touchState.line)
+const touchBad = await callPost('/capri/touch', { act: 'nope' }, headers())
+check('touch: unknown touch act refused', touchBad.status === 400 && /unknown touch act/.test((touchBad.json && touchBad.json.error) || ''), String(touchBad.status))
+const touchSite = await callPost('/capri/touch', { act: 'grabbed' }, headers({ 'sec-fetch-site': 'cross-site' }))
+check('touch: cross-site refused', touchSite.status === 403)
+
 // ── on-demand playback ───────────────────────────────────────────────────────────────────────
 const one = await callPost('/capri/pose', { act: 'victory' }, headers())
 check('pose: one clip accepted', one.status === 200 && one.json && one.json.act === 'victory', JSON.stringify(one.json && one.json.act))

@@ -134,7 +134,9 @@ for (const lang of ['ru', 'en']) {
 check('every line kind resolves in ru and en', missingLines.length === 0, missingLines.join(', '))
 
 // which clips no tool, state or line can currently reach
-const reachable = new Set([...cases.map(([tool, input]) => deedOf(tool, input, 'ru').act), 'stand', 'sleep', 'talk', 'alarm', 'victory', 'flinch', 'turn', 'huff', 'petted', 'curious'])
+const reachable = new Set([...cases.map(([tool, input]) => deedOf(tool, input, 'ru').act), 'stand', 'sleep', 'talk', 'alarm', 'victory', 'flinch', 'turn', 'huff', 'petted', 'curious',
+  // drag and drop, waking from sleep, three failures in a row, a cancelled approval, a fixed error
+  'grabbed', 'land', 'stretch', 'ko', 'shake', 'hop'])
 const unused = ACTS.filter((name) => !reachable.has(name))
 console.log(`\nclips rendered but not reachable from the scene yet: ${unused.join(', ') || 'none'}`)
 

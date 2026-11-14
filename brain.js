@@ -104,6 +104,10 @@ const LINES = {
     alert: ['Эй. Нужно разрешение.', 'Смотри сюда, choom.', 'Меня держит. Подтверди.'],
     go: ['Понял. Работаем.', 'Ладно.', 'Принято.'],
     refused: ['Ладно. Не буду.', 'Как скажешь.', 'Твоё право.'],
+    down: ['Три подряд. Лежу.', 'Всё, я труп. Дай передохнуть.', 'Хватит. Не встаю.'],
+    wake: ['Проснулась. Работаем.', 'Я тут. Продолжаем.'],
+    recovered: ['Починилось. Прыг.', 'Ушло. Ладно.'],
+    cancelled: ['Отменили. Ладно.', 'Ладно, проехали.'],
     done: [
       'Готово. Неплохо.', 'Ход закрыт.', 'Чисто сработано.', 'Всё. Я довольна.',
       // from the original mod (lines.js, done)
@@ -139,6 +143,10 @@ const LINES = {
     alert: ['Hey. I need a permission.', 'Look here, choom.', 'They won\'t let me. Confirm.'],
     go: ['Got it. Working.', 'Fine.', 'Accepted.'],
     refused: ['Fine. I won\'t.', 'Your call.', 'Okay.'],
+    down: ['Three in a row. I\'m down.', 'Dead. Give me a minute.', 'Enough. Not getting up.'],
+    wake: ['Awake. Working.', 'I\'m here. Continue.'],
+    recovered: ['Fixed. Hop.', 'Gone. Fine.'],
+    cancelled: ['Cancelled. Fine.', 'Okay, dropped.'],
     done: [
       'Done. Not bad.', 'Turn closed.', 'Clean run.', 'That\'s it. I\'m pleased.',
       // from the original mod (lines.js, done)

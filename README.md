@@ -26,9 +26,13 @@ words, a panel with her face, and a mode for when the agent needs your decision.
   the satellite, angry, celebrating, facepalm, the alarm, and the small flourishes.
 - **Reacts to tools**: reading — she looks, editing — she cocks her head, searching — she looks
   around, a shell command — red lightning (`zap`), the web — she reaches for the satellite, a
-  subagent — her other minds split away.
+  subagent — her other minds split away. She follows the session you are working in: a subagent's
+  own turns and approvals do not make her celebrate or raise the alarm.
 - **Ticker under her**: verb and target (`EDITS gigs.ts`, `RUNS npm test`, `GREPS "paginate"`); command
   values are never shown, only the first two words.
+- **Turn summary**: when a turn ends the panel shows what it cost — `12 действий · 3 файла · 2 м 14 с`.
+- **Pick her up**: drag her anywhere in the window; she plays `grabbed` while held and `land` when you
+  let go.
 - **Panel**: her face (frames from the show), name, mode tag, the line, and what is being worked on.
   It leaves after 7 seconds, except when she needs your decision.
 - **Needs your decision**: when the agent asks for approval she plays `alarm`, shows her "all eyes"

@@ -459,21 +459,26 @@ window.__ModuleLoader__.load({
 .dsh-capri{position:fixed;bottom:4px;z-index:60;display:flex;flex-direction:column;align-items:center;
   gap:4px;pointer-events:none;user-select:none;-webkit-user-select:none;
   font-family:"Chakra Petch","Rajdhani","Bahnschrift","Segoe UI",system-ui,sans-serif}
-.dsh-capri-sprite{pointer-events:auto;cursor:pointer;background:none;border:0;padding:0;display:block;
-  line-height:0;transform-origin:50% 100%;filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))}
+.dsh-capri-sprite{pointer-events:auto;cursor:grab;background:none;border:0;padding:0;display:block;
+  line-height:0;transform-origin:50% 100%;touch-action:none;
+  filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))}
+.dsh-capri-sprite:active{cursor:grabbing}
 .dsh-capri-sprite img{display:block;image-rendering:auto}
 .dsh-capri-sprite:hover{filter:drop-shadow(0 0 10px rgba(255,30,90,.55)) drop-shadow(0 6px 14px rgba(0,0,0,.55))}
 .dsh-capri-preload{position:absolute;width:0;height:0;overflow:hidden;opacity:0;pointer-events:none}
 .dsh-capri-hud{display:flex;align-items:center;gap:6px;max-width:240px;font:10px/1 "JetBrains Mono",
-  ui-monospace,monospace;letter-spacing:.9px;text-transform:uppercase;color:#8b98a5;white-space:nowrap}
+  ui-monospace,monospace;letter-spacing:.9px;text-transform:uppercase;
+  color:var(--dsw-alias-label-secondary,#8b98a5);white-space:nowrap}
 .dsh-capri-hud .dot{width:6px;height:6px;border-radius:50%;background:#2ef2ff;box-shadow:0 0 6px #2ef2ff;flex:0 0 auto}
 .dsh-capri-hud .dot[data-mode="work"]{background:#ff1e5a;box-shadow:0 0 6px #ff1e5a}
 .dsh-capri-hud .dot[data-mode="alert"]{background:#8cff3d;box-shadow:0 0 8px #8cff3d}
 .dsh-capri-hud .dot[data-mode="done"]{background:#2ef2ff;box-shadow:0 0 8px #2ef2ff}
 .dsh-capri-hud .dot[data-mode="error"]{background:#ff6b6b;box-shadow:0 0 8px #ff6b6b}
 .dsh-capri-hud .dot[data-mode="sleep"]{background:#4a5563;box-shadow:none}
-.dsh-capri-hud .deed{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;color:#c8d3de}
-.dsh-capri-hud .gear{pointer-events:auto;border:0;background:none;color:#8b98a5;font-size:13px;line-height:1;
+.dsh-capri-hud .deed{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;
+  color:var(--dsw-alias-label-primary,#c8d3de)}
+.dsh-capri-hud .gear{pointer-events:auto;border:0;background:none;
+  color:var(--dsw-alias-label-secondary,#8b98a5);font-size:13px;line-height:1;
   padding:2px 3px;border-radius:4px;cursor:pointer}
 .dsh-capri-hud .gear:hover{color:#ff1e5a}
 .dsh-capri-panel{pointer-events:none;position:relative;display:flex;gap:8px;align-items:flex-start;max-width:300px;
@@ -633,6 +638,15 @@ window.__ModuleLoader__.load({
       const bubbleTimer = useRef(0)
       const lastLine = useRef(-1)
       const rootRef = useRef(null)
+      const [offset, setOffset] = useState({ x: 0, y: 0 })
+      const drag = useRef({ active: false, moved: false, x: 0, y: 0 })
+      const skipClick = useRef(false)
+      const touch = (act) => fetch('/capri/touch', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ act }),
+        cache: 'no-store',
+      }).catch(() => {})
       // One pet per page. A plugin update can leave the previous bundle's component mounted next to
       // the new one, and both then draw a panel (that is the duplicated window users see). The
       // newest instance claims the page, the older ones render nothing, and anything a dead instance
@@ -733,6 +747,8 @@ window.__ModuleLoader__.load({
       const style = left
         ? { left: '10px' }
         : { right: '10px' }
+      // dragging moves the whole column, so the sprite keeps its own animation transform
+      if (offset.x || offset.y) style.transform = `translate(${offset.x}px, ${offset.y}px)`
 
       return h('div', { className: 'dsh-capri', style, ref: rootRef },
         h('style', null, CSS),
@@ -742,7 +758,41 @@ window.__ModuleLoader__.load({
           className: 'dsh-capri-sprite',
           title: str(scene.lang).poke,
           'aria-label': str(scene.lang).poke,
+          onPointerDown: (event) => {
+            if (event.button !== 0) return
+            drag.current = { active: true, moved: false, x: event.clientX, y: event.clientY }
+            try { event.currentTarget.setPointerCapture(event.pointerId) } catch { /* old pointer */ }
+          },
+          onPointerMove: (event) => {
+            const state = drag.current
+            if (!state.active) return
+            const dx = event.clientX - state.x
+            const dy = event.clientY - state.y
+            if (!state.moved && Math.abs(dx) + Math.abs(dy) > 6) {
+              state.moved = true
+              touch('grabbed')
+            }
+            if (!state.moved) return
+            state.x = event.clientX
+            state.y = event.clientY
+            setOffset((prev) => ({ x: prev.x + dx, y: prev.y + dy }))
+          },
+          onPointerUp: () => {
+            const state = drag.current
+            if (!state.active) return
+            state.active = false
+            if (!state.moved) return
+            skipClick.current = true
+            touch('land')
+          },
+          onPointerCancel: () => {
+            if (!drag.current.active) return
+            drag.current.active = false
+            if (drag.current.moved) touch('land')
+          },
           onClick: () => {
+            // releasing a drag must not count as a poke
+            if (skipClick.current) { skipClick.current = false; return }
             // a state change goes through POST, never a GET
             fetch(POKE_URL, {
               method: 'POST',

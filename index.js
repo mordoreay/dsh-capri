@@ -22,6 +22,25 @@ const clampSide = (value) => (SIDES.includes(value) ? value : 'right')
 const clampVolume = (value) => Math.min(100, Math.max(0, Math.round(Number(value) || 0)))
 const freshConfig = () => ({ scale: 100, side: 'right', lang: 'ru', alerts: true, sound: true, volume: 30 })
 
+// Russian needs three plural forms; English takes two. Used by the turn summary.
+function plural(count, forms, lang) {
+  if (lang === 'en') return `${count} ${count === 1 ? forms[0] : forms[1]}`
+  const n = Math.abs(count) % 100
+  const tail = n % 10
+  if (n > 10 && n < 20) return `${count} ${forms[2]}`
+  if (tail === 1) return `${count} ${forms[0]}`
+  if (tail >= 2 && tail <= 4) return `${count} ${forms[1]}`
+  return `${count} ${forms[2]}`
+}
+
+function formatSpan(ms, lang) {
+  const total = Math.max(0, Math.round(ms / 1000))
+  const minutes = Math.floor(total / 60)
+  const seconds = total % 60
+  if (lang === 'en') return minutes ? `${minutes}m ${String(seconds).padStart(2, '0')}s` : `${seconds}s`
+  return minutes ? `${minutes} м ${String(seconds).padStart(2, '0')} с` : `${seconds} с`
+}
+
 // rest ladder: how long she stays awake with nothing to do
 const SLEEP_AFTER = 240_000
 
@@ -52,6 +71,19 @@ export function apply(ctx) {
   const config = freshConfig()
   // diagnostics the settings page shows: proof that the approval seam actually reaches her
   const stats = { approvals: 0, lastApproval: 0, events: 0, turns: 0, agents: 0, pets: 0, types: {} }
+
+  // What happened in the running turn, for the summary she shows when it ends.
+  const turn = { actions: 0, files: new Set(), started: 0 }
+  let errorStreak = 0
+  // Sessions that turned out to be subagents: she follows the main session only.
+  const subSessions = new Set()
+  const isSubSession = (session) => {
+    if (!session || !session.id) return false
+    if (subSessions.has(session.id)) return true
+    const depth = session.header && session.header.delegationDepth
+    if (typeof depth === 'number' && depth > 0) { subSessions.add(session.id); return true }
+    return false
+  }
 
   // ── scene ──────────────────────────────────────────────────────────────────────────────────
 
@@ -201,6 +233,10 @@ export function apply(ctx) {
   function notice(tool, input) {
     const deed = deedOf(tool, input, config.lang)
     const now = Date.now()
+    errorStreak = 0
+    if (!turn.started) turn.started = now
+    turn.actions += 1
+    if ((deed.deed === 'write' || deed.deed === 'edit') && deed.target) turn.files.add(deed.target)
     scene.busy = true
     scene.verb = deed.verb
     scene.target = deed.target
@@ -226,12 +262,42 @@ export function apply(ctx) {
 
   function fail(tool) {
     scene.busy = false
+    errorStreak += 1
+    if (errorStreak >= 3) {
+      // three failures in a row: she stops getting up and lies there until something happens
+      play('ko', {
+        mode: 'error',
+        line: lineFor('down', config.lang),
+        face: FACE.error,
+        deed: plural(errorStreak, ['ошибка', 'ошибки', 'ошибок'], config.lang),
+      })
+      return
+    }
     // the tool's name goes into the author's "{tool} упал" lines
     play('flinch', {
       mode: 'error',
       line: lineFor('error', config.lang, tool || ''),
       face: FACE.error,
     })
+  }
+
+  const errorStreakReset = () => { errorStreak = 0 }
+
+  // The summary she shows when a turn ends: actions, files touched, how long it took.
+  function turnSummary() {
+    if (!turn.actions) return ''
+    const parts = [
+      plural(turn.actions, ['действие', 'действия', 'действий'], config.lang),
+      plural(turn.files.size, ['файл', 'файла', 'файлов'], config.lang),
+      formatSpan(Date.now() - (turn.started || Date.now()), config.lang),
+    ]
+    return parts.join(' · ')
+  }
+
+  function resetTurn() {
+    turn.actions = 0
+    turn.files.clear()
+    turn.started = 0
   }
 
   function done() {
@@ -241,7 +307,9 @@ export function apply(ctx) {
     scene.deed = ''
     scene.verb = ''
     scene.target = ''
-    play('victory', { mode: 'done', line: lineFor('done', config.lang), face: FACE.done })
+    const summary = turnSummary()
+    resetTurn()
+    play('victory', { mode: 'done', line: lineFor('done', config.lang), face: FACE.done, deed: summary })
   }
   let doneAt = 0
   const seenAgents = new WeakSet()
@@ -253,6 +321,8 @@ export function apply(ctx) {
   function attachAgent(agent) {
     try {
       if (!agent || seenAgents.has(agent)) return
+      // a subagent's own turn end is not the end of the job: she celebrates the main agent only
+      if (isSubSession(agent.session)) return
       const actx = agent.ctx
       if (!actx || typeof actx.on !== 'function') return
       seenAgents.add(agent)
@@ -277,6 +347,8 @@ export function apply(ctx) {
     if (status === 'running') {
       scene.busy = true
       scene.lastActivity = Date.now()
+      // the agent starts again after a long sleep: she wakes up and stretches
+      if (scene.act === 'sleep') play('stretch', { mode: 'work', line: lineFor('wake', config.lang), face: 'look' })
       return
     }
     if (status !== 'idle') return
@@ -305,6 +377,10 @@ export function apply(ctx) {
   // The answer came: she lets go of the alarm. Refused reads as a sulk, not a celebration.
   function released(outcome) {
     if (scene.mode !== 'alert') return
+    if (outcome === 'cancelled' || outcome === 'unavailable') {
+      play('shake', { mode: 'idle', line: lineFor('cancelled', config.lang), face: 'wide' })
+      return
+    }
     if (outcome === 'rejected') {
       play('huff', { mode: 'work', line: lineFor('refused', config.lang), face: 'smug' })
       return
@@ -383,7 +459,14 @@ export function apply(ctx) {
 
   ctx.on('tools/result', function toolResult(exec, result) {
     try {
-      if (result && result.isError) fail(String((exec && (exec.name || exec.tool)) || ''))
+      if (result && result.isError) { fail(String((exec && (exec.name || exec.tool)) || '')); return }
+      // a failure that got fixed: she hops instead of quietly going back to work
+      if (errorStreak > 0) {
+        errorStreak = 0
+        play('hop', { mode: 'work', line: lineFor('recovered', config.lang), face: 'laugh' })
+        return
+      }
+      errorStreakReset()
     } catch { /* silent */ }
   })
 
@@ -400,6 +483,13 @@ export function apply(ctx) {
       stats.events += 1
       // which event types actually reach a plugin, so a missing one is visible instead of guessed
       if (Object.keys(stats.types).length < 60) stats.types[event.type] = (stats.types[event.type] || 0) + 1
+      // the descriptor is appended inside the child's own session: that session is a subagent, and
+      // she follows the main one only
+      if (event.type === 'subagent/descriptor') {
+        if (session && session.id) subSessions.add(session.id)
+        return
+      }
+      if (isSubSession(session)) return
       if (event.type === 'approval/asked') {
         stats.approvals += 1
         stats.lastApproval = Date.now()
@@ -576,7 +666,8 @@ export function apply(ctx) {
   })
 
   // On demand: show one clip (`{ act }`) or run through every clip (`{ act: 'all' }`).
-  const poseHandler = handler(async (body) => {    const act = body && typeof body.act === 'string' ? body.act.trim() : ''
+  const poseHandler = handler(async (body) => {
+    const act = body && typeof body.act === 'string' ? body.act.trim() : ''
     if (!act) throw new Error(`act is required; one of: ${ACT_NAMES.join(', ')}, all`)
     if (act === 'all' || act === 'reel') {
       const list = showreelAll()
@@ -586,11 +677,22 @@ export function apply(ctx) {
     return { ok: true, act }
   })
 
+  // A clip without a caption: dragging her should not make the panel announce "grabbed".
+  const touchHandler = handler(async (body) => {
+    const act = body && typeof body.act === 'string' ? body.act.trim() : ''
+    if (!CLIPS.acts[act] || !['grabbed', 'land', 'hop', 'petted'].includes(act)) throw new Error(`unknown touch act: ${act}`)
+    scene.busy = false
+    scene.deed = ''
+    play(act, {})
+    return { ok: true, act }
+  })
+
   const server = ctx.webServer
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/state', resource: stateRoute }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/poke', handler: pokeHandler }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/hello', handler: helloHandler }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/pose', handler: poseHandler }))
+  ctx.effect(() => server.register({ kind: 'exact', path: '/capri/touch', handler: touchHandler }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/config', resource: configRoute }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/settings', handler: saveSettings }))
 
