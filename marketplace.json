@@ -49,8 +49,8 @@
                                       "ru":  "Capri"
                                   },
                         "description":  {
-                                            "en":  "Capri in the corner of the DSH window. She reacts to the agent\u0027s tools, speaks in character, shows a panel with her face, and comes to you with the alarm when the agent needs a permission. Settings cover size (50-400 %), side, language, and approval alerts.",
-                                            "ru":  "Капри в углу окна DSH. Она реагирует на инструменты агента, говорит своим голосом, показывает панель со своим лицом и приходит с тревогой, когда агенту нужно подтверждение. В настройках — размер (50-400 %), сторона, язык и оповещения о подтверждениях."
+                                            "en":  "Capri in the corner of the DSH window. She reacts to the agent\u0027s tools, answers in her own words (text only, no audio), shows a panel with her face, and comes to you with the alarm when the agent needs a permission. Settings cover size (50-400 %), side, language, and approval alerts.",
+                                            "ru":  "Капри в углу окна DSH. Она реагирует на инструменты агента, отвечает её словами (только текст, без звука), показывает панель со своим лицом и приходит с тревогой, когда агенту нужно подтверждение. В настройках — размер (50-400 %), сторона, язык и оповещения о подтверждениях."
                                         },
                         "icon":  "icon.svg",
                         "author":  "mordoreay",
@@ -79,6 +79,18 @@
                                                       }
                                      },
                         "versions":  [
+                                         {
+                                             "version":  "1.0.2",
+                                             "publishTimestamp":  1794685089,
+                                             "source":  {
+                                                            "type":  "git",
+                                                            "url":  "https://github.com/mordoreay/dsh-capri",
+                                                            "commit":  "COMMIT_PLACEHOLDER"
+                                                        },
+                                             "engines":  {
+
+                                                         }
+                                         },
                                          {
                                              "version":  "1.0.1",
                                              "publishTimestamp":  1794684806,
