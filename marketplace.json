@@ -1,0 +1,95 @@
+﻿{
+  "format": 1,
+  "title": {
+    "en": "Capri",
+    "ru": "Capri"
+  },
+  "description": {
+    "en": "Capri from Cyberpunk: Edgerunners lives in the corner of the window: an unofficial DSH adaptation of mochiiwuff/capri-desktop.",
+    "ru": "Капри из Cyberpunk: Edgerunners живёт в углу окна: неофициальная адаптация mochiiwuff/capri-desktop под DSH."
+  },
+  "metadata": {
+    "categories": {
+      "companion": {
+        "title": {
+          "en": "Companions",
+          "ru": "Напарники"
+        }
+      }
+    },
+    "labels": {
+      "anime": {
+        "title": {
+          "en": "Anime",
+          "ru": "Аниме"
+        }
+      },
+      "desktop": {
+        "title": {
+          "en": "Desktop",
+          "ru": "Рабочий стол"
+        }
+      }
+    },
+    "sortKeys": {
+      "stars": {
+        "title": {
+          "en": "Stars",
+          "ru": "Звёзды"
+        },
+        "order": "desc"
+      }
+    }
+  },
+  "plugins": [
+    {
+      "name": "dsh-capri",
+      "title": {
+        "en": "Capri",
+        "ru": "Capri"
+      },
+      "description": {
+        "en": "Capri in the corner of the DSH window. She reacts to the agent's tools, speaks in character, shows a panel with her face, and comes to you with the alarm when the agent needs a permission. Settings cover size (50-400 %), side, language, and approval alerts.",
+        "ru": "Капри в углу окна DSH. Она реагирует на инструменты агента, говорит своим голосом, показывает панель со своим лицом и приходит с тревогой, когда агенту нужно подтверждение. В настройках — размер (50-400 %), сторона, язык и оповещения о подтверждениях."
+      },
+      "icon": "icon.svg",
+      "author": "mordoreay",
+      "homepage": "https://github.com/mordoreay/dsh-capri",
+      "repository": {
+        "url": "https://github.com/mordoreay/dsh-capri"
+      },
+      "metadata": {
+        "category": "companion",
+        "keywords": [
+          "capri",
+          "cyberpunk",
+          "edgerunners",
+          "anime",
+          "companion",
+          "desktop pet",
+          "deepseek harness",
+          "dsh"
+        ],
+        "labels": [
+          "desktop",
+          "anime"
+        ],
+        "sortKeys": {
+          "stars": 0
+        }
+      },
+      "versions": [
+        {
+          "version": "1.0.0",
+          "publishTimestamp": 1794684348,
+          "source": {
+            "type": "git",
+            "url": "https://github.com/mordoreay/dsh-capri",
+            "commit": "COMMIT_PLACEHOLDER"
+          },
+          "engines": {}
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+node_modules/
+pnpm-lock.yaml
+package-lock.json
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# the original checkout the renderer needs (see tools/README.md)
+src-capri/
+
+# renderer scratch: raw readbacks, composed frames, screenshots
+tools/out/
+tools/frames/
+tools/shots/
