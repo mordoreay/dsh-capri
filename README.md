@@ -9,8 +9,6 @@ Capri — the *Project Capricorn* construct from Cyberpunk: Edgerunners — live
 DeepSeek Harness window and tells you what the agent is doing: an action ticker, a line in her own
 words, a panel with her face, and a mode for when the agent needs your decision.
 
-She speaks in **text only**: no audio is bundled and nothing is synthesized.
-
 <p align="center">
   <img src="docs/capri.png" width="230" alt="Capri">
 </p>

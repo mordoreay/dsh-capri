@@ -7,9 +7,6 @@ a panel with her face, and a mode for when the agent needs your decision.
 A personal adaptation of [capri-desktop](https://github.com/mochiiwuff/capri-desktop): the same poses
 and the same character, drawn inside the DSH window, with no second Electron process and no PowerShell.
 
-She speaks in **text only**: there is no audio and no voice-over in the plugin, nothing is synthesized —
-her lines are shown in the panel.
-
 ## What it does
 
 - **Stands in the window corner** — frame-by-frame animation from her own exposure sheets
