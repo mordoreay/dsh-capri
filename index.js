@@ -51,7 +51,7 @@ export function apply(ctx) {
 
   const config = freshConfig()
   // diagnostics the settings page shows: proof that the approval seam actually reaches her
-  const stats = { approvals: 0, lastApproval: 0, events: 0, turns: 0, agents: 0, types: {} }
+  const stats = { approvals: 0, lastApproval: 0, events: 0, turns: 0, agents: 0, pets: 0, types: {} }
 
   // ── scene ──────────────────────────────────────────────────────────────────────────────────
 
@@ -429,6 +429,8 @@ export function apply(ctx) {
     events: stats.events,
     turns: stats.turns,
     agents: stats.agents,
+    // how many pet instances the page has mounted: more than one means stacked client copies
+    pets: stats.pets,
     types: stats.types,
     acts: ACT_NAMES.length,
     // name -> drawing count, small enough to ship on every settings open (the full steps are only
@@ -566,9 +568,15 @@ export function apply(ctx) {
     return { ok: true }
   })
 
+  // A mounted pet reports itself. Two or more here means the page stacked client copies (a reload
+  // gone wrong after a plugin update), which looks like a duplicated panel on screen.
+  const helloHandler = handler(async () => {
+    stats.pets += 1
+    return { ok: true, pets: stats.pets }
+  })
+
   // On demand: show one clip (`{ act }`) or run through every clip (`{ act: 'all' }`).
-  const poseHandler = handler(async (body) => {
-    const act = body && typeof body.act === 'string' ? body.act.trim() : ''
+  const poseHandler = handler(async (body) => {    const act = body && typeof body.act === 'string' ? body.act.trim() : ''
     if (!act) throw new Error(`act is required; one of: ${ACT_NAMES.join(', ')}, all`)
     if (act === 'all' || act === 'reel') {
       const list = showreelAll()
@@ -581,6 +589,7 @@ export function apply(ctx) {
   const server = ctx.webServer
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/state', resource: stateRoute }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/poke', handler: pokeHandler }))
+  ctx.effect(() => server.register({ kind: 'exact', path: '/capri/hello', handler: helloHandler }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/pose', handler: poseHandler }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/config', resource: configRoute }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/settings', handler: saveSettings }))

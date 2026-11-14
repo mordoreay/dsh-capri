@@ -660,6 +660,13 @@ window.__ModuleLoader__.load({
       useEffect(() => {
         const unlock = () => { try { voice.ensure() } catch { /* no audio device */ } }
         window.addEventListener('pointerdown', unlock, { once: true })
+        // report this pet instance: the host counts them, and more than one means stacked copies
+        fetch('/capri/hello', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: '{}',
+          cache: 'no-store',
+        }).catch(() => {})
         return () => window.removeEventListener('pointerdown', unlock)
       }, [])
 
@@ -704,7 +711,7 @@ window.__ModuleLoader__.load({
 
       return h('div', { className: 'dsh-capri', style },
         h('style', null, CSS),
-        h(Bubble, { scene, visible: bubble }),
+        h(Bubble, { scene, visible: bubble && !panel }),
         h('button', {
           type: 'button',
           className: 'dsh-capri-sprite',
