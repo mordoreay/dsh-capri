@@ -115,6 +115,22 @@ check('settings: "false" string is false, not true', alertsStr.json && alertsStr
 const alertsOn = await callPost('/capri/settings', { alerts: true }, headers())
 check('settings: alerts can be turned back on', alertsOn.json && alertsOn.json.alerts === true)
 
+// ── sound settings ─────────────────────────────────────────────────────────────────────────────
+const soundOff = await callPost('/capri/settings', { sound: false }, headers())
+check('sound: can be turned off', soundOff.json && soundOff.json.sound === false, String(soundOff.json && soundOff.json.sound))
+const soundOn = await callPost('/capri/settings', { sound: true }, headers())
+check('sound: can be turned back on', soundOn.json && soundOn.json.sound === true)
+const volHigh = await callPost('/capri/settings', { volume: 150 }, headers())
+check('volume: clamped to 100', volHigh.json && volHigh.json.volume === 100, String(volHigh.json && volHigh.json.volume))
+const volLow = await callPost('/capri/settings', { volume: -5 }, headers())
+check('volume: clamped to 0', volLow.json && volLow.json.volume === 0, String(volLow.json && volLow.json.volume))
+const volJunk = await callPost('/capri/settings', { volume: 'abc' }, headers())
+check('volume: junk falls back to 0', volJunk.json && volJunk.json.volume === 0, String(volJunk.json && volJunk.json.volume))
+const volOk = await callPost('/capri/settings', { volume: 30 }, headers())
+check('volume: normal value sticks', volOk.json && volOk.json.volume === 30)
+const soundState = await (await getState(headers())).json()
+check('sound: the scene carries sound and volume', soundState.sound === true && soundState.volume === 30, `${soundState.sound}/${soundState.volume}`)
+
 // в”Ђв”Ђ the approval waterfall must always delegate в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
 const approval = listeners.get('session/event')
 check('approval: session feed registered', typeof approval === 'function')
