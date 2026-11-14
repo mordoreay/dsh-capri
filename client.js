@@ -459,6 +459,8 @@ window.__ModuleLoader__.load({
 .dsh-capri{position:fixed;bottom:4px;z-index:60;display:flex;flex-direction:column;align-items:center;
   gap:4px;pointer-events:none;user-select:none;-webkit-user-select:none;
   font-family:"Chakra Petch","Rajdhani","Bahnschrift","Segoe UI",system-ui,sans-serif}
+/* a pet drawn by a bundle that predates the owner marker: hide it instantly, before any sweep */
+.dsh-capri:not([data-capri-owned]){display:none!important}
 .dsh-capri-sprite{pointer-events:auto;cursor:grab;background:none;border:0;padding:0;display:block;
   line-height:0;transform-origin:50% 100%;touch-action:none;
   filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))}
@@ -660,14 +662,20 @@ window.__ModuleLoader__.load({
       useEffect(() => {
         try { window.__capriOwner = instanceId.current } catch { /* private mode */ }
         setClaimed(true)
-        const sweep = setTimeout(() => {
+        // A copy loaded by an older bundle has no owner logic of its own, so it keeps drawing its
+        // stale panel. Sweep it right away and then keep sweeping: if its React root re-inserts the
+        // node, the next pass takes it out again.
+        const sweep = () => {
           try {
             for (const node of document.querySelectorAll('.dsh-capri')) {
               if (node !== rootRef.current) node.remove()
             }
           } catch { /* nothing to sweep */ }
-        }, 500)
-        return () => clearTimeout(sweep)
+        }
+        sweep()
+        const first = setTimeout(sweep, 400)
+        const timer = setInterval(sweep, 1500)
+        return () => { clearTimeout(first); clearInterval(timer) }
       }, [])
 
       useEffect(() => {
@@ -678,9 +686,9 @@ window.__ModuleLoader__.load({
         if (!scene.line) return
         setBubble(true)
         clearTimeout(bubbleTimer.current)
-        // a permission question stays up until it is answered
+        // a permission question stays up until it is answered; a working line lingers a little longer
         if (scene.mode !== 'alert') {
-          bubbleTimer.current = setTimeout(() => setBubble(false), 7000)
+          bubbleTimer.current = setTimeout(() => setBubble(false), 10000)
         }
       }, [scene && scene.lineSeq, scene && scene.line])
 
@@ -750,7 +758,7 @@ window.__ModuleLoader__.load({
       // dragging moves the whole column, so the sprite keeps its own animation transform
       if (offset.x || offset.y) style.transform = `translate(${offset.x}px, ${offset.y}px)`
 
-      return h('div', { className: 'dsh-capri', style, ref: rootRef },
+      return h('div', { className: 'dsh-capri', style, ref: rootRef, 'data-capri-owned': '1' },
         h('style', null, CSS),
         h(Bubble, { scene, visible: bubble && !panel }),
         h('button', {
