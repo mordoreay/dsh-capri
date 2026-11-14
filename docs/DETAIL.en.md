@@ -4,8 +4,8 @@ Capri — the Project Capricorn construct from *Cyberpunk: Edgerunners* — live
 DeepSeek Harness window and shows what the agent is doing: an action ticker, a line in her own words,
 a panel with her face, and a mode for when the agent needs your decision.
 
-A personal adaptation of [capri-desktop](https://github.com/mochiiwuff/capri-desktop): the same poses
-and the same character, drawn inside the DSH window, with no second Electron process and no PowerShell.
+A personal adaptation of [capri-desktop](https://github.com/mochiiwuff/capri-desktop): the same
+character, drawn inside the DSH window, with no second Electron process and no PowerShell.
 
 ## What it does
 

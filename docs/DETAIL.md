@@ -4,8 +4,8 @@
 Harness и показывает, что делает агент: тикер действия, реплику её словами, панель со своим лицом
 и отдельный режим «нужно твоё решение».
 
-Плагин — личная адаптация [capri-desktop](https://github.com/mochiiwuff/capri-desktop): те же позы,
-тот же характер, но рендер внутри окна DSH, без второго Electron-процесса и без PowerShell.
+Плагин — личная адаптация [capri-desktop](https://github.com/mochiiwuff/capri-desktop): тот же
+персонаж, но рендер внутри окна DSH, без второго Electron-процесса и без PowerShell.
 
 ## Что делает
 

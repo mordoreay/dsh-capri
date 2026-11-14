@@ -14,10 +14,10 @@ words, a panel with her face, and a mode for when the agent needs your decision.
 </p>
 
 > **Unofficial adaptation.** This repository is a DeepSeek Harness port of
-> [**mochiiwuff/capri-desktop**](https://github.com/mochiiwuff/capri-desktop): the same character, the
-> same poses and the same scripts, drawn inside the DSH window, with no second Electron process and no
-> PowerShell. All credit for the character, her artwork and her writing goes to the original author.
-> See [NOTICE.md](NOTICE.md) and [LICENSE](LICENSE).
+> [**mochiiwuff/capri-desktop**](https://github.com/mochiiwuff/capri-desktop): the same character,
+> drawn inside the DSH window, with no second Electron process and no PowerShell. All credit for the
+> character, her artwork and her writing goes to the original author. See [NOTICE.md](NOTICE.md) and
+> [LICENSE](LICENSE).
 
 ## What it does
 

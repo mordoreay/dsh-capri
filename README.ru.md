@@ -14,9 +14,9 @@
 </p>
 
 > **Неофициальная адаптация.** Это порт [**mochiiwuff/capri-desktop**](https://github.com/mochiiwuff/capri-desktop)
-> под DeepSeek Harness: тот же персонаж, те же позы и те же тексты, но рендер внутри окна DSH, без
-> второго Electron-процесса и без PowerShell. Все права на персонажа, арт и реплики принадлежат
-> автору оригинала. См. [NOTICE.md](NOTICE.md) и [LICENSE](LICENSE).
+> под DeepSeek Harness: тот же персонаж, но рендер внутри окна DSH, без второго Electron-процесса и
+> без PowerShell. Все права на персонажа, арт и реплики принадлежат автору оригинала. См.
+> [NOTICE.md](NOTICE.md) и [LICENSE](LICENSE).
 
 ## Что делает
 
