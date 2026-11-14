@@ -1,6 +1,6 @@
 {
   "name": "dsh-capri",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
   "description": "Capri в окне DeepSeek Harness: кадры из её шейдера, тикер действий, панель с лицом и режим «нужно твоё решение»",
@@ -25,7 +25,9 @@
     "locale",
     "docs",
     "icon.svg",
-    "assets"
+    "assets",
+    "NOTICE.md",
+    "LICENSE"
   ],
   "dsh": {
     "bundle": {
