@@ -462,9 +462,14 @@ window.__ModuleLoader__.load({
 /* a pet drawn by a bundle that predates the owner marker: hide it instantly, before any sweep */
 .dsh-capri:not([data-capri-owned]){display:none!important}
 .dsh-capri-sprite{pointer-events:auto;cursor:grab;background:none;border:0;padding:0;display:block;
-  line-height:0;transform-origin:50% 100%;touch-action:none;
+  position:relative;line-height:0;transform-origin:50% 100%;touch-action:none;
   filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))}
 .dsh-capri-sprite:active{cursor:grabbing}
+.dsh-capri-frame{position:relative;z-index:1;display:block}
+.dsh-capri-ghost{position:absolute;inset:0;z-index:0;pointer-events:none;animation:capri-ghost 150ms ease-out forwards}
+@keyframes capri-ghost{from{opacity:1}to{opacity:0}}
+.dsh-capri-sprite:focus-visible{outline:2px solid #2ef2ff;outline-offset:4px;border-radius:8px}
+@media (prefers-reduced-motion: reduce){.dsh-capri-ghost{display:none}}
 .dsh-capri-sprite img{display:block;image-rendering:auto}
 .dsh-capri-sprite:hover{filter:drop-shadow(0 0 10px rgba(255,30,90,.55)) drop-shadow(0 6px 14px rgba(0,0,0,.55))}
 .dsh-capri-preload{position:absolute;width:0;height:0;overflow:hidden;opacity:0;pointer-events:none}
@@ -625,7 +630,7 @@ window.__ModuleLoader__.load({
     function Bubble({ scene, visible }) {
       if (!visible || !scene || !scene.line) return null
       const L = str(scene.lang)
-      return h('div', { className: 'dsh-capri-panel dsh-capri-bubble', role: 'status' },
+      return h('div', { className: 'dsh-capri-panel dsh-capri-bubble', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' },
         h('img', { className: 'face', src: faceSrc(scene.face), alt: '', draggable: false }),
         h('div', { className: 'body' },
           h('div', { className: 'head' },
@@ -651,6 +656,22 @@ window.__ModuleLoader__.load({
       const [offset, setOffset] = useState({ x: 0, y: 0 })
       const drag = useRef({ active: false, moved: false, x: 0, y: 0 })
       const skipClick = useRef(false)
+      // where she was left the last time, restored from the saved settings
+      const offsetReady = useRef(false)
+      const sideSeen = useRef('')
+      const scaleSeen = useRef(0)
+      const saveTimer = useRef(0)
+      const persistOffset = (x, y) => {
+        clearTimeout(saveTimer.current)
+        saveTimer.current = setTimeout(() => {
+          fetch(SETTINGS_URL, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ x, y }),
+            cache: 'no-store',
+          }).catch(() => {})
+        }, 350)
+      }
       const touch = (act) => fetch('/capri/touch', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -704,11 +725,42 @@ window.__ModuleLoader__.load({
       }, [scene && scene.mode])
 
       useEffect(() => {
-        // switching side or size moves her corner: a leftover drag offset would look wrong
-        setOffset({ x: 0, y: 0 })
+        if (!scene) return
+        // first run: restore the saved spot; later runs: a new side or size resets it
+        if (!offsetReady.current) {
+          offsetReady.current = true
+          sideSeen.current = scene.side
+          scaleSeen.current = scene.scale
+          setOffset({ x: Number(scene.x) || 0, y: Number(scene.y) || 0 })
+          return
+        }
+        if (scene.side !== sideSeen.current || scene.scale !== scaleSeen.current) {
+          sideSeen.current = scene.side
+          scaleSeen.current = scene.scale
+          setOffset({ x: 0, y: 0 })
+          persistOffset(0, 0)
+        }
       }, [scene && scene.side, scene && scene.scale])
 
       useEffect(() => () => clearTimeout(bubbleTimer.current), [])
+
+      // crossfade: the previous shot stays under the new one for ~150 ms, so a pose change dissolves
+      // instead of cutting
+      const prevShot = useRef({ act: '', frame: '' })
+      const [ghost, setGhost] = useState(null)
+
+      useEffect(() => {
+        const was = prevShot.current
+        if (!scene || !was.act || was.act === scene.act || !was.frame) return
+        setGhost({ act: was.act, frame: was.frame })
+        const timer = setTimeout(() => setGhost(null), 150)
+        return () => clearTimeout(timer)
+      }, [scene && scene.act])
+
+      // remember what was actually drawn, for the next crossfade
+      useEffect(() => {
+        if (scene) prevShot.current = { act: scene.act, frame: frameAt(scene, now) }
+      })
 
       // Her sounds. An AudioContext may only start inside a user gesture, so it is created on the
       // first click anywhere in the page and reused after that; until then she stays silent.
@@ -749,13 +801,20 @@ window.__ModuleLoader__.load({
         const lineSeq = scene.lineSeq === undefined ? 0 : scene.lineSeq
         if (before.mode === mode && before.act === act && before.lineSeq === lineSeq) return
 
-        const actCue = { talk: 'hello', zap: 'bolt', petted: 'purr', victory: 'done', flinch: 'error', alarm: 'alert' }[act]
+        const actCue = {
+          talk: 'hello', zap: 'bolt', petted: 'purr', victory: 'done', flinch: 'error',
+          alarm: 'alert', ko: 'crash', stretch: 'rise', gaze: 'star', grabbed: 'charge',
+          land: 'land', hop: 'star',
+        }[act]
         const modeCue = { done: 'done', alert: 'alert', error: 'error' }[mode]
         try {
           // the act cue wins: a done turn changes both mode and act, and must sound once
           if (act !== before.act && actCue) voice.play(actCue)
-          else if (mode !== before.mode && modeCue) voice.play(modeCue)
-          else if (act !== before.act && mode === 'work') voice.play('tick')
+          else if (mode !== before.mode) {
+            // a teleport sweep only when work starts again, not on every tool
+            if (mode === 'work' && before.mode && before.mode !== 'work') voice.play('teleport-out')
+            else if (modeCue) voice.play(modeCue)
+          } else if (act !== before.act && mode === 'work') voice.play('tick')
           if (lineSeq !== before.lineSeq && lineSeq > 0) voice.play('blip', { mood: mode })
         } catch { /* a sound must never break the scene */ }
         lastSound.current = { mode, act, lineSeq }
@@ -815,6 +874,7 @@ window.__ModuleLoader__.load({
             if (!state.moved) return
             skipClick.current = true
             touch('land')
+            persistOffset(offset.x, offset.y)
           },
           onPointerCancel: () => {
             if (!drag.current.active) return
@@ -832,8 +892,16 @@ window.__ModuleLoader__.load({
               cache: 'no-store',
             }).catch(() => {})
           },
-        }, frame
-          ? h('img', { src: frameSrc(scene.act, frame, scene.asset), width, height, alt: '', draggable: false })
+        }, ghost
+          ? h('img', {
+            key: 'ghost', className: 'dsh-capri-ghost',
+            src: frameSrc(ghost.act, ghost.frame, scene.asset), width, height, alt: '', draggable: false,
+          })
+          : null, frame
+          ? h('img', {
+            key: 'frame', className: 'dsh-capri-frame',
+            src: frameSrc(scene.act, frame, scene.asset), width, height, alt: '', draggable: false,
+          })
           : null),
         h('div', { className: 'dsh-capri-hud' },
           h('span', { className: 'dot', 'data-mode': scene.mode, 'aria-hidden': true }),

@@ -32,7 +32,10 @@ words, a panel with her face, and a mode for when the agent needs your decision.
   values are never shown, only the first two words.
 - **Turn summary**: when a turn ends the panel shows what it cost — `12 действий · 3 файла · 2 м 14 с`.
 - **Pick her up**: drag her anywhere in the window; she plays `grabbed` while held and `land` when you
-  let go.
+  let go. The spot is remembered in `~/.dsh/capri.json` and restored after a restart.
+- **Smooth changes**: clips dissolve into each other over 150 ms instead of cutting.
+- **Reachable by keyboard**: Tab focuses her, Space pokes her, and every line is a live region, so a
+  screen reader announces it.
 - **Panel**: her face (frames from the show), name, mode tag, the line, and what is being worked on.
   It leaves after 10 seconds, except when she needs your decision.
 - **Needs your decision**: when the agent asks for approval she plays `alarm`, shows her "all eyes"

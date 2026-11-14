@@ -20,7 +20,9 @@ const clampLang = (value) => (LANGS.includes(value) ? value : 'ru')
 const SIDES = ['right', 'left']
 const clampSide = (value) => (SIDES.includes(value) ? value : 'right')
 const clampVolume = (value) => Math.min(100, Math.max(0, Math.round(Number(value) || 0)))
-const freshConfig = () => ({ scale: 100, side: 'right', lang: 'ru', alerts: true, sound: true, volume: 30 })
+// Where the drag left her, relative to her corner. Bounded so a bad value cannot park her off-screen.
+const clampOffset = (value) => Math.min(4000, Math.max(-4000, Math.round(Number(value) || 0)))
+const freshConfig = () => ({ scale: 100, side: 'right', lang: 'ru', alerts: true, sound: true, volume: 30, x: 0, y: 0 })
 
 // Russian needs three plural forms; English takes two. Used by the turn summary.
 function plural(count, forms, lang) {
@@ -140,6 +142,8 @@ export function apply(ctx) {
       lang: config.lang,
       sound: config.sound,
       volume: config.volume,
+      x: config.x,
+      y: config.y,
       canvas: CLIPS.canvas,
       asset: ASSET_V,
     }
@@ -530,6 +534,8 @@ export function apply(ctx) {
     alerts: config.alerts,
     sound: config.sound,
     volume: config.volume,
+    x: config.x,
+    y: config.y,
     approvals: stats.approvals,
     lastApproval: stats.lastApproval,
     events: stats.events,
@@ -561,6 +567,8 @@ export function apply(ctx) {
       if (data.alerts !== undefined) config.alerts = data.alerts === true || data.alerts === 'true'
       if (data.sound !== undefined) config.sound = data.sound === true || data.sound === 'true'
       if (data.volume !== undefined) config.volume = clampVolume(data.volume)
+      if (data.x !== undefined) config.x = clampOffset(data.x)
+      if (data.y !== undefined) config.y = clampOffset(data.y)
     } catch { /* no settings yet */ }
   })()
 
@@ -664,6 +672,8 @@ export function apply(ctx) {
     }
     if (body && body.sound !== undefined) config.sound = body.sound === true || body.sound === 'true'
     if (body && body.volume !== undefined) config.volume = clampVolume(body.volume)
+    if (body && body.x !== undefined) config.x = clampOffset(body.x)
+    if (body && body.y !== undefined) config.y = clampOffset(body.y)
     await saveConfig()
     return { ok: true, ...publicConfig() }
   })

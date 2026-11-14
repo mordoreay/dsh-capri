@@ -24,7 +24,11 @@ and the same character, drawn inside the DSH window, with no second Electron pro
 - **Rest**: with nothing to do she falls asleep (240 seconds of quiet).
 - **Click her** for a reaction.
 - **Drag her**: pick her up with the mouse and put her anywhere — she plays `grabbed` while held and
-  `land` when released; the release does not count as a poke.
+  `land` when released; the release does not count as a poke, and the spot survives a restart.
+- **Smooth changes**: a new clip fades in over the old one for 150 ms, so poses dissolve instead of
+  cutting.
+- **Keyboard and screen readers**: Tab focuses her, Space pokes her, and the line lives in
+  `aria-live`, so it is announced.
 - **Turn summary**: when a turn ends the panel shows what it cost — actions, files, time.
 - **Her own session only**: subagent turns and approvals are ignored, so she does not celebrate someone
   else's work or raise the alarm for nothing.
