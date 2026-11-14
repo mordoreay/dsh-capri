@@ -281,6 +281,26 @@ check('pose: showreel lists every clip once', reel.json && Array.isArray(reel.js
 const afterReel = await (await getState(headers())).json()
 check('pose: showreel starts at the first clip', afterReel.act === 'stand' && afterReel.mode === 'idle', `${afterReel.mode}/${afterReel.act}`)
 
+// ── packaging: anything the modules import must survive an npm pack ──────────────────────────
+// A missing entry in "files" installs a plugin that dies on import; this check catches it here.
+{
+  const { readFileSync } = await import('node:fs')
+  const root = new URL('../', import.meta.url)
+  const pkg = JSON.parse(readFileSync(new URL('package.json', root), 'utf8'))
+  const listed = new Set(pkg.files || [])
+  const shipped = (rel) => listed.has(rel)
+    || (pkg.files || []).some((entry) => !entry.includes('.') && rel.startsWith(`${entry}/`))
+  for (const source of ['index.js', 'brain.js', 'client.js']) {
+    const text = readFileSync(new URL(source, root), 'utf8')
+    for (const match of text.matchAll(/from\s+'(\.\/[^']+)'/g)) {
+      const rel = match[1].slice(2)
+      check(`pack: ${source} -> ${rel} is shipped`, shipped(rel), rel)
+    }
+  }
+  check('pack: the asset manifest is shipped', shipped('assets/clips.json'))
+  check('pack: the loader patch is shipped', shipped('cordis.patch.yml'))
+}
+
 const failed = results.filter((r) => !r.ok)
 console.log(`\n${results.length - failed.length}/${results.length} checks passed`)
 // the host keeps a 15s rest timer alive; the harness is a one-shot check
