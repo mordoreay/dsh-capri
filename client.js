@@ -632,6 +632,29 @@ window.__ModuleLoader__.load({
       const [bubble, setBubble] = useState(false)
       const bubbleTimer = useRef(0)
       const lastLine = useRef(-1)
+      const rootRef = useRef(null)
+      // One pet per page. A plugin update can leave the previous bundle's component mounted next to
+      // the new one, and both then draw a panel (that is the duplicated window users see). The
+      // newest instance claims the page, the older ones render nothing, and anything a dead instance
+      // left behind is removed once.
+      const instanceId = useRef(`capri-${Math.random().toString(36).slice(2)}`)
+      const [claimed, setClaimed] = useState(false)
+      const mine = (() => {
+        try { return window.__capriOwner === instanceId.current } catch { return true }
+      })()
+
+      useEffect(() => {
+        try { window.__capriOwner = instanceId.current } catch { /* private mode */ }
+        setClaimed(true)
+        const sweep = setTimeout(() => {
+          try {
+            for (const node of document.querySelectorAll('.dsh-capri')) {
+              if (node !== rootRef.current) node.remove()
+            }
+          } catch { /* nothing to sweep */ }
+        }, 500)
+        return () => clearTimeout(sweep)
+      }, [])
 
       useEffect(() => {
         if (!scene) return
@@ -701,6 +724,8 @@ window.__ModuleLoader__.load({
       }, [scene && scene.mode, scene && scene.act, scene && scene.lineSeq])
 
       if (!scene) return null
+      // a newer copy of the plugin owns the page: this one stays invisible
+      if (!claimed || !mine) return null
 
       const frame = frameAt(scene, now)
       const { height, width, left } = layout(scene, vp.h)
@@ -709,7 +734,7 @@ window.__ModuleLoader__.load({
         ? { left: '10px' }
         : { right: '10px' }
 
-      return h('div', { className: 'dsh-capri', style },
+      return h('div', { className: 'dsh-capri', style, ref: rootRef },
         h('style', null, CSS),
         h(Bubble, { scene, visible: bubble && !panel }),
         h('button', {
