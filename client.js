@@ -778,6 +778,9 @@ window.__ModuleLoader__.load({
 
       useEffect(() => {
         let alive = true
+        // opening the settings page closes the floating panel, so the same controls are never on
+        // screen twice
+        if (!compact) setPanel(false)
         refresh().catch((reason) => { if (alive) setError(String((reason && reason.message) || reason)) })
         return () => { alive = false; clearTimeout(timer.current) }
       }, [])
