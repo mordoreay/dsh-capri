@@ -70,7 +70,11 @@ export function apply(ctx) {
 
   const config = freshConfig()
   // diagnostics the settings page shows: proof that the approval seam actually reaches her
-  const stats = { approvals: 0, lastApproval: 0, events: 0, turns: 0, agents: 0, pets: 0, types: {} }
+  const stats = { approvals: 0, lastApproval: 0, events: 0, turns: 0, agents: 0, types: {} }
+  // Mounted pets, per page load. A reload starts a new page token, so a growing count here means
+  // duplicates in one page, not someone refreshing the window.
+  const petPages = new Map()
+  const PET_PAGES_LIMIT = 24
 
   // What happened in the running turn, for the summary she shows when it ends.
   const turn = { actions: 0, files: new Set(), started: 0 }
@@ -236,7 +240,9 @@ export function apply(ctx) {
     errorStreak = 0
     if (!turn.started) turn.started = now
     turn.actions += 1
-    if ((deed.deed === 'write' || deed.deed === 'edit') && deed.target) turn.files.add(deed.target)
+    if ((deed.deed === 'write' || deed.deed === 'edit') && deed.target && turn.files.size < 200) {
+      turn.files.add(deed.target)
+    }
     scene.busy = true
     scene.verb = deed.verb
     scene.target = deed.target
@@ -486,10 +492,20 @@ export function apply(ctx) {
       // the descriptor is appended inside the child's own session: that session is a subagent, and
       // she follows the main one only
       if (event.type === 'subagent/descriptor') {
-        if (session && session.id) subSessions.add(session.id)
+        if (session && session.id) {
+          subSessions.add(session.id)
+          // a long-lived app can see many sessions; this set is only a filter, not a history
+          if (subSessions.size > 400) subSessions.clear()
+        }
         return
       }
       if (isSubSession(session)) return
+      // a new turn starts clean: the previous summary and the error streak belong to the old one
+      if (event.type === 'turn/start') {
+        resetTurn()
+        errorStreak = 0
+        return
+      }
       if (event.type === 'approval/asked') {
         stats.approvals += 1
         stats.lastApproval = Date.now()
@@ -519,8 +535,9 @@ export function apply(ctx) {
     events: stats.events,
     turns: stats.turns,
     agents: stats.agents,
-    // how many pet instances the page has mounted: more than one means stacked client copies
-    pets: stats.pets,
+    // how many pet instances the most recent page mounted (more than one = stacked copies)
+    pets: Array.from(petPages.values()).at(-1) || 0,
+    pages: petPages.size,
     types: stats.types,
     acts: ACT_NAMES.length,
     // name -> drawing count, small enough to ship on every settings open (the full steps are only
@@ -658,11 +675,14 @@ export function apply(ctx) {
     return { ok: true }
   })
 
-  // A mounted pet reports itself. Two or more here means the page stacked client copies (a reload
-  // gone wrong after a plugin update), which looks like a duplicated panel on screen.
-  const helloHandler = handler(async () => {
-    stats.pets += 1
-    return { ok: true, pets: stats.pets }
+  // A mounted pet reports itself. Two or more on one page means the page stacked client copies
+  // (a reload gone wrong after a plugin update), which looks like a duplicated panel on screen.
+  const helloHandler = handler(async (body) => {
+    const page = String((body && body.page) || '?').slice(0, 64)
+    const count = (petPages.get(page) || 0) + 1
+    petPages.set(page, count)
+    if (petPages.size > PET_PAGES_LIMIT) petPages.delete(petPages.keys().next().value)
+    return { ok: true, pets: count, pages: petPages.size }
   })
 
   // On demand: show one clip (`{ act }`) or run through every clip (`{ act: 'all' }`).

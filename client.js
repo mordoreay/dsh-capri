@@ -648,8 +648,7 @@ window.__ModuleLoader__.load({
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ act }),
         cache: 'no-store',
-      }).catch(() => {})
-      // One pet per page. A plugin update can leave the previous bundle's component mounted next to
+      }).catch(() => {})      // One pet per page. A plugin update can leave the previous bundle's component mounted next to
       // the new one, and both then draw a panel (that is the duplicated window users see). The
       // newest instance claims the page, the older ones render nothing, and anything a dead instance
       // left behind is removed once.
@@ -696,6 +695,11 @@ window.__ModuleLoader__.load({
         if (scene && scene.mode === 'alert') setBubble(true)
       }, [scene && scene.mode])
 
+      useEffect(() => {
+        // switching side or size moves her corner: a leftover drag offset would look wrong
+        setOffset({ x: 0, y: 0 })
+      }, [scene && scene.side, scene && scene.scale])
+
       useEffect(() => () => clearTimeout(bubbleTimer.current), [])
 
       // Her sounds. An AudioContext may only start inside a user gesture, so it is created on the
@@ -706,10 +710,14 @@ window.__ModuleLoader__.load({
         const unlock = () => { try { voice.ensure() } catch { /* no audio device */ } }
         window.addEventListener('pointerdown', unlock, { once: true })
         // report this pet instance: the host counts them, and more than one means stacked copies
+        // (the token is per page load, so a refresh does not look like a duplicate)
+        const page = (() => {
+          try { return window.__capriPage || (window.__capriPage = Math.random().toString(36).slice(2)) } catch { return 'x' }
+        })()
         fetch('/capri/hello', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: '{}',
+          body: JSON.stringify({ page }),
           cache: 'no-store',
         }).catch(() => {})
         return () => window.removeEventListener('pointerdown', unlock)
@@ -768,6 +776,7 @@ window.__ModuleLoader__.load({
           'aria-label': str(scene.lang).poke,
           onPointerDown: (event) => {
             if (event.button !== 0) return
+            skipClick.current = false
             drag.current = { active: true, moved: false, x: event.clientX, y: event.clientY }
             try { event.currentTarget.setPointerCapture(event.pointerId) } catch { /* old pointer */ }
           },
@@ -783,7 +792,13 @@ window.__ModuleLoader__.load({
             if (!state.moved) return
             state.x = event.clientX
             state.y = event.clientY
-            setOffset((prev) => ({ x: prev.x + dx, y: prev.y + dy }))
+            // keep her reachable: a drag can never push her off the window
+            const spanX = Math.max(60, (vp.w || window.innerWidth || 1200) - width - 30)
+            const spanY = Math.max(80, (vp.h || window.innerHeight || 800) - Math.max(240, height))
+            setOffset((prev) => ({
+              x: Math.min(160, Math.max(-spanX, prev.x + dx)),
+              y: Math.min(80, Math.max(-spanY, prev.y + dy)),
+            }))
           },
           onPointerUp: () => {
             const state = drag.current

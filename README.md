@@ -34,7 +34,7 @@ words, a panel with her face, and a mode for when the agent needs your decision.
 - **Pick her up**: drag her anywhere in the window; she plays `grabbed` while held and `land` when you
   let go.
 - **Panel**: her face (frames from the show), name, mode tag, the line, and what is being worked on.
-  It leaves after 7 seconds, except when she needs your decision.
+  It leaves after 10 seconds, except when she needs your decision.
 - **Needs your decision**: when the agent asks for approval she plays `alarm`, shows her "all eyes"
   face and stays until you answer. She only watches: the decision stays yours. Can be turned off.
 - **Rest**: with nothing to do she falls asleep (240 seconds of quiet).

@@ -18,7 +18,7 @@ and the same character, drawn inside the DSH window, with no second Electron pro
 - **Ticker under her**: verb and target (`EDITS gigs.ts`, `RUNS npm test`, `GREPS "paginate"`); command
   values are never shown, only the first two words.
 - **Panel**: her face (frames from the show), name, mode tag, the line, and what is being worked on.
-  It leaves after 7 seconds, except when she needs your decision.
+  It leaves after 10 seconds, except when she needs your decision.
 - **Needs your decision**: when the agent asks for approval she plays `alarm`, shows her "all eyes"
   face and stays until you answer. Can be turned off in settings.
 - **Rest**: with nothing to do she falls asleep (240 seconds of quiet).
