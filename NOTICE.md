@@ -25,5 +25,5 @@ sponsored or endorsed by them. The licence in [LICENSE](LICENSE) covers code and
 it does not grant rights to trademarks or third-party characters, and it does not cover the character
 artwork in `assets/`.
 
-**No other borrowed material.** No fonts, sounds or images from the show or from other projects are
+**No other borrowed material.** No fonts or images from the show or from other projects are
 bundled. The contact sheet in `docs/` is a render of this repository's own frames.
