@@ -35,6 +35,10 @@ words, a panel with her face, and a mode for when the agent needs your decision.
   face and stays until you answer. She only watches: the decision stays yours. Can be turned off.
 - **Rest**: with nothing to do she falls asleep (240 seconds of quiet).
 - **Says something now and then** when it has been quiet for a while, from the original's line sets.
+- **Sounds**: quiet cues synthesized the way the original does it (Web Audio, no audio files shipped) —
+  a blip when she speaks, a tick while working, the alarm, the victory, an error, a purr when you pet
+  her. Off and volume in settings. The first cue needs one click in the window: the browser will not
+  let a page make sound before a user gesture.
 - **Click her** for a reaction.
 - **`/capri all`** plays every clip in turn, `/capri <clip>` plays one (`/capri victory`). The show
   stops as soon as the agent does something.
@@ -124,6 +128,7 @@ entry and press install. The index pins the exact commit of each version.
 | Side | Left / Right | Which corner of the window |
 | Language | Русский / English | Lines, ticker, panel and this page; the drawings do not depend on it |
 | Come for permission | Yes / No | Play the alarm and stay while a permission question is open |
+| Sound | Yes / No + volume | Quiet cues for her actions; the first one needs a click in the window |
 
 Everything is stored in `~/.dsh/capri.json` and applied at once.
 

@@ -23,6 +23,9 @@ and the same character, drawn inside the DSH window, with no second Electron pro
   face and stays until you answer. Can be turned off in settings.
 - **Rest**: with nothing to do she falls asleep (240 seconds of quiet).
 - **Click her** for a reaction.
+- **Sound**: quiet cues from the original's own synth engine (Web Audio, no audio files) — a blip on a
+  line, a tick while working, the alarm, the victory, an error, a purr when you pet her. Turned on and
+  levelled in settings; the first cue needs a click in the window, that is the browser's rule.
 - **The `/capri` command**: `/capri all` plays every clip in turn, `/capri <clip>` plays one
   (for example `/capri victory`). The show stops as soon as the agent does something.
 - **When nothing happens for a while** she says something on her own now and then, from the

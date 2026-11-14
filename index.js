@@ -19,7 +19,8 @@ const LANGS = ['ru', 'en']
 const clampLang = (value) => (LANGS.includes(value) ? value : 'ru')
 const SIDES = ['right', 'left']
 const clampSide = (value) => (SIDES.includes(value) ? value : 'right')
-const freshConfig = () => ({ scale: 100, side: 'right', lang: 'ru', alerts: true })
+const clampVolume = (value) => Math.min(100, Math.max(0, Math.round(Number(value) || 0)))
+const freshConfig = () => ({ scale: 100, side: 'right', lang: 'ru', alerts: true, sound: true, volume: 30 })
 
 // rest ladder: how long she stays awake with nothing to do
 const SLEEP_AFTER = 240_000
@@ -101,6 +102,8 @@ export function apply(ctx) {
       scale: config.scale,
       side: config.side,
       lang: config.lang,
+      sound: config.sound,
+      volume: config.volume,
       canvas: CLIPS.canvas,
       asset: ASSET_V,
     }
@@ -419,6 +422,8 @@ export function apply(ctx) {
     side: config.side,
     lang: config.lang,
     alerts: config.alerts,
+    sound: config.sound,
+    volume: config.volume,
     approvals: stats.approvals,
     lastApproval: stats.lastApproval,
     events: stats.events,
@@ -445,6 +450,8 @@ export function apply(ctx) {
       config.side = clampSide(data.side)
       config.lang = clampLang(data.lang)
       if (data.alerts !== undefined) config.alerts = data.alerts === true || data.alerts === 'true'
+      if (data.sound !== undefined) config.sound = data.sound === true || data.sound === 'true'
+      if (data.volume !== undefined) config.volume = clampVolume(data.volume)
     } catch { /* no settings yet */ }
   })()
 
@@ -546,6 +553,8 @@ export function apply(ctx) {
       // strict: a stored "false" string must not read as true
       config.alerts = body.alerts === true || body.alerts === 'true'
     }
+    if (body && body.sound !== undefined) config.sound = body.sound === true || body.sound === 'true'
+    if (body && body.volume !== undefined) config.volume = clampVolume(body.volume)
     await saveConfig()
     return { ok: true, ...publicConfig() }
   })
