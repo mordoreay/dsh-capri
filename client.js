@@ -487,6 +487,13 @@ window.__ModuleLoader__.load({
   padding:8px 10px 9px;border:1px solid #7b3cff;border-radius:4px;
   background:linear-gradient(160deg,rgba(10,13,18,.97),rgba(6,9,14,.97));color:#eef4f8;
   box-shadow:0 0 0 1px rgba(0,0,0,.7),0 10px 26px rgba(0,0,0,.6),inset 0 0 22px rgba(123,60,255,.12)}
+/* the status window has one fixed geometry: work, idle and alert are the same box, so it never
+   jumps in width between lines, and a second copy lands exactly on top of the first */
+.dsh-capri-bubble{width:326px;height:78px;max-width:326px;box-sizing:border-box;align-items:center;overflow:hidden}
+.dsh-capri-bubble .body{display:flex;flex-direction:column;justify-content:center;flex:1;min-width:0;height:100%}
+.dsh-capri-bubble .body p{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
+  overflow:hidden;font-size:12.5px;line-height:1.28;max-height:2.6em}
+.dsh-capri-bubble .body .deed{min-height:12px;margin-top:3px}
 .dsh-capri-panel:after{content:"";position:absolute;left:-5px;bottom:14px;width:8px;height:8px;
   background:#0a0d12;border-left:1px solid #7b3cff;border-bottom:1px solid #7b3cff;transform:rotate(45deg)}
 .dsh-capri-panel img.face{width:46px;height:46px;object-fit:cover;border:1px solid #2ef2ff;
@@ -618,7 +625,7 @@ window.__ModuleLoader__.load({
     function Bubble({ scene, visible }) {
       if (!visible || !scene || !scene.line) return null
       const L = str(scene.lang)
-      return h('div', { className: 'dsh-capri-panel', role: 'status' },
+      return h('div', { className: 'dsh-capri-panel dsh-capri-bubble', role: 'status' },
         h('img', { className: 'face', src: faceSrc(scene.face), alt: '', draggable: false }),
         h('div', { className: 'body' },
           h('div', { className: 'head' },
@@ -626,7 +633,8 @@ window.__ModuleLoader__.load({
             h('i', { 'data-mode': scene.mode }, scene.tag || ''),
           ),
           h('p', null, scene.line),
-          scene.deed ? h('div', { className: 'deed' }, scene.deed) : null,
+          // always rendered: the box keeps its height whether or not there is a deed line
+          h('div', { className: 'deed' }, scene.deed || ''),
         ),
       )
     }
