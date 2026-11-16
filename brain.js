@@ -88,10 +88,10 @@ export function deedOf(tool, input, lang = 'ru') {
 const LINES = {
   ru: {
     idle: ['Ничего не происходит. Просто парю.', 'Заказов нет. Немного скучно.', 'Тихая ночь в Сети.'],
-    read: ['Читаю. Быстро.', 'Так, что тут у нас…', 'Данные идут.'],
+    read: ['Читаю', 'Так, что тут у нас…', 'Данные идут.'],
     edit: ['Правлю. Аккуратно.', 'Переписываю. Не смотри.', 'Код течёт.'],
     search: ['Ищу. Всё в кадре.', 'Прочёсываю.', 'Где это лежит…'],
-    run: ['Запускаю. Держись.', 'Разряд пошёл.'],
+    run: ['Запускаю. Держись.', 'Разряд пошёл.', 'Команда ушла. Смотри лог.', 'Жму. Не дёргай.', 'Пошло. Разряд в линии.'],
     test: ['Тесты. Нервничаю.', 'Смотрю, что сломалось.', 'Прогон идёт.'],
     build: ['Собираю. Долго.', 'Компиляция. Жду.', 'Собираю по кускам.'],
     install: ['Ставлю. Не мешай.', 'Тащу пакеты.', 'Ещё одна зависимость.'],
@@ -102,7 +102,7 @@ const LINES = {
     agent: ['Зову своих.', 'Ещё одна я.', 'Разошлись.'],
     ask: ['Нужно твоё слово.', 'Смотри: вопрос к тебе.', 'Стоп. Решаешь ты.'],
     alert: ['Эй. Нужно разрешение.', 'Смотри сюда, choom.', 'Меня держит. Подтверди.'],
-    go: ['Понял. Работаем.', 'Ладно.', 'Принято.'],
+    go: ['Поняла, работаем.', 'Ладно.', 'Принято.'],
     refused: ['Ладно. Не буду.', 'Как скажешь.', 'Твоё право.'],
     down: ['Три подряд. Лежу.', 'Всё, я труп. Дай передохнуть.', 'Хватит. Не встаю.'],
     wake: ['Проснулась. Работаем.', 'Я тут. Продолжаем.'],
@@ -114,7 +114,7 @@ const LINES = {
       'Готово. Неплохо.', 'Ход закрыт.', 'Чисто сработано.', 'Всё. Я довольна.',
       // from the original mod (lines.js, done)
       'Готово! Высший класс.', 'Заказ выполнен, чумба.',
-      'Сдано. Неплохо, а?', 'Готово. Нас тут десятки следило, ничего странного.',
+      'Сдано. Неплохо, а?',
     ],
     error: [
       'Ой.', 'Сломалось. Бывает.', 'Не вышло.',
@@ -132,7 +132,7 @@ const LINES = {
     read: ['Reading. Fast.', 'So what do we have here…', 'Data incoming.'],
     edit: ['Editing. Carefully.', 'Rewriting. Don\'t look.', 'Code\'s flowing.'],
     search: ['Searching. Got it in frame.', 'Sweeping.', 'Where does that live…'],
-    run: ['Running it. Hold tight.', 'Arc\'s out.'],
+    run: ['Running it. Hold tight.', 'Arc\'s out.', 'Command\'s away. Watch the log.', 'Pressing it. Don\'t touch.', 'Off it goes. Arc in the line.'],
     test: ['Tests. Nervous.', 'Let\'s see what broke.', 'Run in progress.'],
     build: ['Building. Slow.', 'Compiling. Waiting.', 'Piece by piece.'],
     install: ['Installing. Don\'t touch.', 'Pulling packages.', 'Another dependency.'],
@@ -155,7 +155,7 @@ const LINES = {
       'Done. Not bad.', 'Turn closed.', 'Clean run.', 'That\'s it. I\'m pleased.',
       // from the original mod (lines.js, done)
       'Done! That’s preem.', 'Gig complete, choom.',
-      'Delivered. Pretty nova, right?', 'Finished. Dozens of us watching, nothing looked off.',
+      'Delivered. Pretty nova, right?',
     ],
     error: [
       'Oops.', 'Broke. Happens.', 'That failed.',
