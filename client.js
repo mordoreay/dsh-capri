@@ -964,6 +964,10 @@ window.__ModuleLoader__.load({
         : { right: '10px' }
       // dragging moves the whole column, so the sprite keeps its own animation transform
       if (offset.x || offset.y) style.transform = `translate(${offset.x}px, ${offset.y}px)`
+      // The rendered canvas keeps ~18 % of transparent space below her feet (measured on the stand,
+      // sleep, talk and zap sheets). Without pulling it in, the ticker and the gear hang a hundred
+      // pixels below her at 350–400 %, which reads as "far away from her".
+      const bottomPad = Math.round(height * 0.18)
 
       return h('div', { className: 'dsh-capri', style, ref: rootRef, 'data-capri-owned': '1' },
         h('style', null, CSS),
