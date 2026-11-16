@@ -36,7 +36,7 @@ const BOIL_CAP = 10   // at most this many drawings for one hold
 // cut. For these acts one extra drawing is rendered halfway to the next key, and the hold it was
 // taken from is shortened by the same frame, so the clip keeps its length.
 const TWEEN_ON = new URLSearchParams(location.search).get('tween') !== '0'
-const TWEEN_ACTS = new Set(['zap', 'victory', 'hop', 'land', 'turn', 'grabbed', 'shake', 'point', 'split'])
+const TWEEN_ACTS = new Set(['zap', 'victory', 'hop', 'land', 'turn', 'grabbed', 'shake', 'point', 'split', 'flinch'])
 
 function lerpPose(from, to, t) {
   const out = { ...from }
@@ -197,15 +197,23 @@ async function main() {
       total += 1;
     };
 
+    // Plan the tweens before emitting: the frame may be taken from this key's last drawing, from the
+    // next key's first one, or — when every drawing is a single 24 fps frame — paid for with one
+    // extra frame per act, so a quick beat stays quick.
+    const plan = keys.map(([hold]) => variantHolds(hold));
+    const tweenAt = new Array(Math.max(0, keys.length - 1)).fill(false);
+    if (TWEEN_ON && TWEEN_ACTS.has(actName)) {
+      let paid = 1;
+      for (let i = 0; i < keys.length - 1; i += 1) {
+        if (plan[i][plan[i].length - 1] >= 2) { plan[i][plan[i].length - 1] -= 1; tweenAt[i] = true; }
+        else if (plan[i + 1][0] >= 2) { plan[i + 1][0] -= 1; tweenAt[i] = true; }
+        else if (paid > 0) { paid -= 1; tweenAt[i] = true; }
+      }
+    }
+
     for (let i = 0; i < keys.length; i += 1) {
       const [hold, pose] = keys[i];
-      const spans = variantHolds(hold);
-      // steal one frame from this hold for the tween that leads into the next key
-      let tween = 0;
-      if (TWEEN_ON && TWEEN_ACTS.has(actName) && i < keys.length - 1) {
-        if (spans[spans.length - 1] >= 2) { spans[spans.length - 1] -= 1; tween = 1; }
-        else if (spans.length > 1 && spans[spans.length - 2] >= 2) { spans[spans.length - 2] -= 1; tween = 1; }
-      }
+      const spans = plan[i];
       for (const span of spans) {
         const now = (frame + span / 2) * frameMs;
         const under = base.sample(now) || base.sample(0);
@@ -217,7 +225,8 @@ async function main() {
         await emit(merged, span);
         frame += span;
       }
-      if (tween) {
+      if (tweenAt[i]) {
+        const tween = 1;
         const now = (frame + tween / 2) * frameMs;
         const under = base.sample(now) || base.sample(0);
         const mine = player ? player.resolve(pose, 1) : {};
