@@ -158,8 +158,9 @@ sheets, both from capri-desktop. The renderer in [`tools/`](tools/README.md):
    premultiplied so the edges do not halo.
 
 Long holds are re-boiled: a drawing held for three frames or more is rendered several times with a
-fresh line seed, so the line keeps wobbling instead of freezing. The result: **21 clips, 291
-drawings, 708×978**, played by the plugin with the holds declared in the sheets — animation on twos,
+fresh line seed, so the line keeps wobbling instead of freezing. The quick sheets — `zap`, `victory`,
+`hop`, `land`, `turn`, `grabbed`, `shake`, `point`, `split` — get one extra drawing halfway to the next
+key, so a 42 ms beat moves instead of cutting. The result: **21 clips, 346 drawings, 708×978**, played by the plugin with the holds declared in the sheets — animation on twos,
 12 drawings per second (24 for the quick beats), exactly as the original plays her.
 
 To rebuild the assets you need the original checkout (see [tools/README.md](tools/README.md)) and a

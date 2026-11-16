@@ -50,7 +50,17 @@ invalidates the browser cache on its own — no manual `?v=` bump is needed.
 
 **Boil.** A drawing held for three frames or more is rendered several times with a fresh line seed
 (`BOIL_EVERY`, `BOIL_CAP` in `page.mjs`), so the line keeps wobbling instead of freezing. That is what
-takes the clip count from 177 key drawings to 291 rendered drawings.
+takes the clip count from 177 key drawings to 346 rendered drawings (boil plus tweens).
+
+**Tweens.** The fast sheets hold a drawing for one 24 fps frame (42 ms), which reads as a cut. For
+`zap`, `victory`, `hop`, `land`, `turn`, `grabbed`, `shake`, `point` and `split` the renderer emits one
+extra drawing halfway to the next key and shortens the hold it came from by the same frame, so the clip
+keeps its length but the beats move smoothly. Open the render page as `page.html?tween=0` to render
+without them.
+
+**Layout note.** `page.html` imports `./page.mjs`, the page imports `/src-capri/capri-desktop-main/...`,
+and `serve.mjs` serves the repository root — so `src-capri` must sit at the repository root, which is
+what the `.gitignore` expects.
 
 ## Checks
 
