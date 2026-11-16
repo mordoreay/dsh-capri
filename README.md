@@ -42,7 +42,7 @@ words, a panel with her face, and a mode for when the agent needs your decision.
 - **Alive when idle**: she turns her head now and then, leans after the cursor when it comes close, and
   finds herself a small gesture every 18–40 seconds instead of standing still.
 - **Her lines type themselves** out with a blip every few letters, and the beats land: a flash of
-  lightning on a command, a red halo while a question is open, a glitch after a failure.
+  lightning on a command, a glitch after a failure. No glow halos around her.
 - **Reachable by keyboard**: Tab focuses her, Space pokes her, and every line is a live region, so a
   screen reader announces it.
 - **Panel**: her face (frames from the show), name, mode tag, the line, and what is being worked on.

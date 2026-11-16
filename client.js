@@ -480,11 +480,8 @@ window.__ModuleLoader__.load({
 .dsh-capri-lean{transition:transform 320ms ease-out}
 .dsh-capri-fx{position:absolute;inset:-26px;pointer-events:none;z-index:0;border-radius:12px}
 .dsh-capri-fx[data-fx="zap"]{background:radial-gradient(circle at 62% 42%,rgba(46,242,255,.38),transparent 62%);animation:capri-flash 190ms ease-out forwards}
-.dsh-capri-fx[data-fx="win"]{background:radial-gradient(circle at 50% 30%,rgba(140,255,61,.26),transparent 58%);animation:capri-flash 280ms ease-out forwards}
-.dsh-capri-fx[data-fx="alert"]{box-shadow:inset 0 0 70px rgba(255,30,90,.4);animation:capri-pulse 1.1s ease-in-out infinite}
 .dsh-capri-fx[data-fx="glitch"]{background:linear-gradient(90deg,rgba(255,30,90,.3),transparent 45%);animation:capri-glitch 220ms steps(3,end) forwards}
 @keyframes capri-flash{from{opacity:1}to{opacity:0}}
-@keyframes capri-pulse{0%,100%{opacity:.32}50%{opacity:.85}}
 @keyframes capri-glitch{0%{transform:translateX(0)}33%{transform:translateX(-3px)}66%{transform:translateX(3px)}100%{transform:translateX(0);opacity:0}}
 @media (prefers-reduced-motion: reduce){.dsh-capri-fx{display:none}}
 .dsh-capri-sprite:active{cursor:grabbing}
@@ -920,13 +917,11 @@ window.__ModuleLoader__.load({
       if (!claimed || !mine) return null
 
       const frame = frameAt(scene, now)
-      // a flash of lightning for a command, a red halo while a question is open, a glitch after a
-      // failure, sparks on a win: small overlays that make the beat land
-      const fx = scene.mode === 'alert' ? 'alert'
-        : scene.act === 'zap' ? 'zap'
-          : scene.act === 'flinch' || scene.act === 'ko' ? 'glitch'
-            : scene.act === 'victory' ? 'win'
-              : ''
+      // Only the sharp beats get an overlay: lightning for a command and a glitch after a failure.
+      // No glow halos — they read as stage lights and strain the eyes.
+      const fx = scene.act === 'zap' ? 'zap'
+        : scene.act === 'flinch' || scene.act === 'ko' ? 'glitch'
+          : ''
       const { height, width, left } = layout(scene, vp.h)
       const frames = Array.isArray(scene.steps) ? Array.from(new Set(scene.steps.map((step) => step[0]))) : []
       const style = left
