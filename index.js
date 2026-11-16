@@ -496,6 +496,19 @@ export function apply(ctx) {
   // events `approval/asked` / `approval/decided` are appended to the log, and the `session/event`
   // feed reaches plugins regardless of how the agent's scope is tagged. It also gives the exact
   // moment the question is answered, which the waterfall never did.
+  // A workspace she is not watching finished. That is not a victory for the window the user is in:
+  // she just says so, quietly, and never over a pending permission question.
+  let otherDoneAt = 0
+  function otherDone() {
+    if (Date.now() - otherDoneAt < 8000) return
+    if (scene.reeling || scene.mode === 'alert') return
+    otherDoneAt = Date.now()
+    scene.line = lineFor('other', config.lang)
+    scene.lineSeq += 1
+    scene.face = FACE.idle
+    scene.lastActivity = Date.now()
+  }
+
   ctx.on('session/event', function sessionEvent(session, event) {
     try {
       if (!event || typeof event.type !== 'string') return
@@ -513,6 +526,11 @@ export function apply(ctx) {
         return
       }
       if (isSubSession(session)) return
+      // another workspace finished: a quiet line, not a victory for the window that is open
+      if (event.type === 'turn/end' && focused && session && session.id && session.id !== focused) {
+        otherDone()
+        return
+      }
       // another workspace is running: she follows the window that is actually open
       if (!watching(session && session.id)) return
       // a new turn starts clean: the previous summary and the error streak belong to the old one
