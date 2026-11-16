@@ -33,7 +33,12 @@ words, a panel with her face, and a mode for when the agent needs your decision.
 - **Turn summary**: when a turn ends the panel shows what it cost — `12 действий · 3 файла · 2 м 14 с`.
 - **Pick her up**: drag her anywhere in the window; she plays `grabbed` while held and `land` when you
   let go. The spot is remembered in `~/.dsh/capri.json` and restored after a restart.
-- **Smooth changes**: clips dissolve into each other over 150 ms instead of cutting.
+- **Smooth changes**: clips dissolve into each other over 150 ms instead of cutting, and she keeps
+  breathing — a slow rise and a light shiver of the line — so a long hold never freezes.
+- **Alive when idle**: she turns her head now and then, leans after the cursor when it comes close, and
+  finds herself a small gesture every 18–40 seconds instead of standing still.
+- **Her lines type themselves** out with a blip every few letters, and the beats land: a flash of
+  lightning on a command, a red halo while a question is open, a glitch after a failure.
 - **Reachable by keyboard**: Tab focuses her, Space pokes her, and every line is a live region, so a
   screen reader announces it.
 - **Panel**: her face (frames from the show), name, mode tag, the line, and what is being worked on.
@@ -153,8 +158,9 @@ sheets, both from capri-desktop. The renderer in [`tools/`](tools/README.md):
    premultiplied so the edges do not halo.
 
 Long holds are re-boiled: a drawing held for three frames or more is rendered several times with a
-fresh line seed, so the line keeps wobbling instead of freezing. The result: **21 clips, 291
-drawings, 708×978**, played by the plugin with the holds declared in the sheets — animation on twos,
+fresh line seed, so the line keeps wobbling instead of freezing. The quick sheets — `zap`, `victory`,
+`hop`, `land`, `turn`, `grabbed`, `shake`, `point`, `split` — get one extra drawing halfway to the next
+key, so a 42 ms beat moves instead of cutting. The result: **21 clips, 346 drawings, 708×978**, played by the plugin with the holds declared in the sheets — animation on twos,
 12 drawings per second (24 for the quick beats), exactly as the original plays her.
 
 To rebuild the assets you need the original checkout (see [tools/README.md](tools/README.md)) and a

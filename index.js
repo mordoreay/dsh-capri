@@ -707,6 +707,20 @@ export function apply(ctx) {
     return { ok: true, act }
   })
 
+  // Doing nothing for a while, she finds something to do herself: a short gesture instead of the
+  // same idle loop for minutes on end.
+  let gestureTimer = 0
+  const GESTURES = ['look', 'curious', 'point', 'stretch', 'gaze', 'hop']
+  function scheduleGesture(delay) {
+    cancel(gestureTimer)
+    gestureTimer = later(() => {
+      scheduleGesture(18_000 + Math.random() * 22_000)
+      if (scene.reeling || scene.busy || scene.mode !== 'idle' || scene.act !== 'stand') return
+      const act = GESTURES[Math.floor(Math.random() * GESTURES.length)]
+      play(act, { mode: 'idle', face: FACE.idle })
+    }, delay || (18_000 + Math.random() * 22_000))
+  }
+
   // A clip without a caption: dragging her should not make the panel announce "grabbed".
   const touchHandler = handler(async (body) => {
     const act = body && typeof body.act === 'string' ? body.act.trim() : ''
@@ -759,6 +773,7 @@ export function apply(ctx) {
     rest()
     scheduleRest()
     scheduleChatter()
+    scheduleGesture()
     // she says hello with her talking nod instead of standing there silently
     later(() => {
       play('talk', { mode: 'idle', line: lineFor('hello', config.lang), face: 'smug' })

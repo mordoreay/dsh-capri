@@ -32,6 +32,24 @@ const BOIL_FROM = 3    // frames; below this a hold is shown once
 const BOIL_EVERY = 2  // frames per drawing inside a long hold
 const BOIL_CAP = 10   // at most this many drawings for one hold
 
+// Tween policy: the fast sheets hold a drawing for a single 24 fps frame (42 ms), which reads as a
+// cut. For these acts one extra drawing is rendered halfway to the next key, and the hold it was
+// taken from is shortened by the same frame, so the clip keeps its length.
+const TWEEN_ON = new URLSearchParams(location.search).get('tween') !== '0'
+const TWEEN_ACTS = new Set(['zap', 'victory', 'hop', 'land', 'turn', 'grabbed', 'shake', 'point', 'split'])
+
+function lerpPose(from, to, t) {
+  const out = { ...from }
+  for (const key of Object.keys(to)) {
+    const a = from[key]
+    const b = to[key]
+    if (typeof a === 'number' && typeof b === 'number') out[key] = a + (b - a) * t
+    else if (Array.isArray(a) && Array.isArray(b)) out[key] = b.map((value, i) => (a[i] ?? value) + (value - (a[i] ?? value)) * t)
+    else out[key] = b
+  }
+  return out
+}
+
 function variantHolds(hold) {
   if (hold < BOIL_FROM) return [hold]
   const count = Math.min(BOIL_CAP, Math.max(2, Math.ceil(hold / BOIL_EVERY)))
@@ -114,9 +132,81 @@ async function main() {
     let frame = 0;    // frame index inside the exposure sheet
     let drawing = 0;  // emitted PNG index
 
+    // One drawing: build the shader parameters, draw, read the surface back, post the raw pixels.
+    const emit = async (merged, span) => {
+      const p = {
+        seed: ((seedBase + drawing * 37) % 1000) / 10,
+        boil: actName === 'sleep' ? 0.5 : 0.9,
+        hair: merged.hair,
+        head: merged.head,
+        mane: merged.mane,
+        armL: merged.armL,
+        armR: merged.armR,
+        longL: merged.longL,
+        longR: merged.longR,
+        sit: sitFlag,
+        bend: merged.bend,
+        kickL: merged.kickL,
+        kickR: merged.kickR,
+        smear: merged.smear,
+        echo: merged.echo,
+        glitch: 0,
+        glitchSeed: 0,
+        split: 0,
+        collapse: 0,
+        dissolve: 0,
+        sparkle: 1,
+        grade: 1,
+        sil: [0.02, 0.02, 0.05],
+        silAmount: 0,
+        misreg: [-2.6, 2.2],
+        alpha: 1,
+      };
+
+      renderer.draw(p);
+      if (drawing === 0) log('drew');
+      gl.readPixels(0, 0, PW, PH, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
+      if (drawing === 0) log(`read ${pixels.filter((v, k) => k % 4 === 3 && v > 0).length} opaque px`);
+
+      drawing += 1;
+      const name = `${actName}_${String(drawing).padStart(2, '0')}`;
+      const query = new URLSearchParams({
+        act: actName,
+        name,
+        bob: String(merged.bob),
+        tilt: String(merged.tilt),
+        sx: String(merged.sx),
+        sy: String(merged.sy),
+      });
+      const res = await fetch(`/raw?${query}`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/octet-stream' },
+        body: pixels,
+      });
+      if (!res.ok) throw new Error(`save ${actName}/${name}: ${res.status}`);
+      if (drawing === 1) log('posted');
+
+      frames.push({
+        name,
+        hold: Math.round(span * frameMs),
+        bob: merged.bob,
+        tilt: merged.tilt,
+        sx: merged.sx,
+        sy: merged.sy,
+      });
+      total += 1;
+    };
+
     for (let i = 0; i < keys.length; i += 1) {
       const [hold, pose] = keys[i];
-      for (const span of variantHolds(hold)) {
+      const spans = variantHolds(hold);
+      // steal one frame from this hold for the tween that leads into the next key
+      let tween = 0;
+      if (TWEEN_ON && TWEEN_ACTS.has(actName) && i < keys.length - 1) {
+        if (spans[spans.length - 1] >= 2) { spans[spans.length - 1] -= 1; tween = 1; }
+        else if (spans.length > 1 && spans[spans.length - 2] >= 2) { spans[spans.length - 2] -= 1; tween = 1; }
+      }
+      for (const span of spans) {
         const now = (frame + span / 2) * frameMs;
         const under = base.sample(now) || base.sample(0);
         const merged = {
@@ -124,69 +214,21 @@ async function main() {
           ...(under ? base.resolve(under.pose, 1) : {}),
           ...(player ? player.resolve(pose, 1) : {}),
         };
-
-        const p = {
-          seed: ((seedBase + drawing * 37) % 1000) / 10,
-          boil: actName === 'sleep' ? 0.5 : 0.9,
-          hair: merged.hair,
-          head: merged.head,
-          mane: merged.mane,
-          armL: merged.armL,
-          armR: merged.armR,
-          longL: merged.longL,
-          longR: merged.longR,
-          sit: sitFlag,
-          bend: merged.bend,
-          kickL: merged.kickL,
-          kickR: merged.kickR,
-          smear: merged.smear,
-          echo: merged.echo,
-          glitch: 0,
-          glitchSeed: 0,
-          split: 0,
-          collapse: 0,
-          dissolve: 0,
-          sparkle: 1,
-          grade: 1,
-          sil: [0.02, 0.02, 0.05],
-          silAmount: 0,
-          misreg: [-2.6, 2.2],
-          alpha: 1,
-        };
-
-        renderer.draw(p);
-        if (drawing === 0) log('drew');
-        gl.readPixels(0, 0, PW, PH, gl.RGBA, gl.UNSIGNED_BYTE, pixels);
-        if (drawing === 0) log(`read ${pixels.filter((v, k) => k % 4 === 3 && v > 0).length} opaque px`);
-
-        drawing += 1;
-        const name = `${actName}_${String(drawing).padStart(2, '0')}`;
-        const query = new URLSearchParams({
-          act: actName,
-          name,
-          bob: String(merged.bob),
-          tilt: String(merged.tilt),
-          sx: String(merged.sx),
-          sy: String(merged.sy),
-        });
-        const res = await fetch(`/raw?${query}`, {
-          method: 'POST',
-          headers: { 'content-type': 'application/octet-stream' },
-          body: pixels,
-        });
-        if (!res.ok) throw new Error(`save ${actName}/${name}: ${res.status}`);
-        if (drawing === 1) log('posted');
-
-        frames.push({
-          name,
-          hold: Math.round(span * frameMs),
-          bob: merged.bob,
-          tilt: merged.tilt,
-          sx: merged.sx,
-          sy: merged.sy,
-        });
-        total += 1;
+        await emit(merged, span);
         frame += span;
+      }
+      if (tween) {
+        const now = (frame + tween / 2) * frameMs;
+        const under = base.sample(now) || base.sample(0);
+        const mine = player ? player.resolve(pose, 1) : {};
+        const next = player ? player.resolve(keys[i + 1][1], 1) : {};
+        const merged = {
+          ...NEUTRAL,
+          ...(under ? base.resolve(under.pose, 1) : {}),
+          ...lerpPose(mine, next, 0.5),
+        };
+        await emit(merged, tween);
+        frame += tween;
       }
     }
 

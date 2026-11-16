@@ -40,7 +40,7 @@ const chrome = spawn(CHROME, [
   ...glFlags,
   '--window-size=900,1400',
   `--user-data-dir=${profile}`,
-  `http://127.0.0.1:${PORT}/capri-tools/page.html${process.env.CAPRI_ACTS ? `?acts=${encodeURIComponent(process.env.CAPRI_ACTS)}` : ''}`,
+  `http://127.0.0.1:${PORT}/tools/page.html${process.env.CAPRI_ACTS ? `?acts=${encodeURIComponent(process.env.CAPRI_ACTS)}` : ''}`,
 ], { stdio: 'ignore' });
 
 const doneFile = path.join(OUT, '_done.json');
