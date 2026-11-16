@@ -108,7 +108,7 @@ const LINES = {
     wake: ['Проснулась. Работаем.', 'Я тут. Продолжаем.'],
     recovered: ['Починилось. Прыг.', 'Ушло. Ладно.'],
     cancelled: ['Отменили. Ладно.', 'Ладно, проехали.'],
-    other: ['Другая я закончила.'],
+    other: ['Другая я закончила.', 'Та, вторая, закончила.', 'В соседнем окне готово.'],
     done: [
       'Готово. Неплохо.', 'Ход закрыт.', 'Чисто сработано.', 'Всё. Я довольна.',
       // from the original mod (lines.js, done)
@@ -148,7 +148,7 @@ const LINES = {
     wake: ['Awake. Working.', 'I\'m here. Continue.'],
     recovered: ['Fixed. Hop.', 'Gone. Fine.'],
     cancelled: ['Cancelled. Fine.', 'Okay, dropped.'],
-    other: ['Another me finished.'],
+    other: ['Another me finished.', 'The other one finished.', 'Done in the other window.'],
     done: [
       'Done. Not bad.', 'Turn closed.', 'Clean run.', 'That\'s it. I\'m pleased.',
       // from the original mod (lines.js, done)

@@ -497,16 +497,30 @@ export function apply(ctx) {
   // feed reaches plugins regardless of how the agent's scope is tagged. It also gives the exact
   // moment the question is answered, which the waterfall never did.
   // A workspace she is not watching finished. That is not a victory for the window the user is in:
-  // she just says so, quietly, and never over a pending permission question.
+  // she hops, says so, and then the scene she was in comes back untouched.
   let otherDoneAt = 0
   function otherDone() {
     if (Date.now() - otherDoneAt < 8000) return
     if (scene.reeling || scene.mode === 'alert') return
     otherDoneAt = Date.now()
-    scene.line = lineFor('other', config.lang)
-    scene.lineSeq += 1
-    scene.face = FACE.idle
-    scene.lastActivity = Date.now()
+    const before = {
+      mode: scene.mode, line: scene.line, face: scene.face,
+      deed: scene.deed, verb: scene.verb, target: scene.target, busy: scene.busy,
+    }
+    play('hop', { mode: 'idle', line: lineFor('other', config.lang), face: FACE.idle, deed: '' })
+    const length = CLIPS.acts.hop.steps.reduce((sum, step) => sum + step[1], 0)
+    later(() => {
+      // the hop is over and rest() already wiped the ticker: put the open workspace back
+      if (scene.act !== 'stand' && scene.act !== 'hop') return
+      scene.busy = before.busy
+      scene.mode = before.mode
+      scene.line = before.line
+      scene.face = before.face
+      scene.deed = before.deed
+      scene.verb = before.verb
+      scene.target = before.target
+      scene.seq += 1
+    }, length + 220)
   }
 
   ctx.on('session/event', function sessionEvent(session, event) {

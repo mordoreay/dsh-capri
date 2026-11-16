@@ -30,7 +30,8 @@ words, a panel with her face, and a mode for when the agent needs your decision.
   sessions running in the background are ignored, and a subagent's own turns and approvals never make
   her celebrate or raise the alarm.
 - **Another workspace finished**: when a session the window is not showing completes its turn, she
-  says it quietly — «Другая я закончила.» — with no victory and no alarm.
+  hops once and says it — «Другая я закончила.», «Та, вторая, закончила.», «В соседнем окне готово.» —
+  then the scene of the open workspace comes back. No victory, no alarm.
 - **Ticker under her**: verb and target (`EDITS gigs.ts`, `RUNS npm test`, `GREPS "paginate"`); command
   values are never shown, only the first two words.
 - **Turn summary**: when a turn ends the panel shows what it cost — `12 действий · 3 файла · 2 м 14 с`.

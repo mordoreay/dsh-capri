@@ -322,15 +322,20 @@ pre({ name: 'edit', arguments: { file_path: 'C:/x/other.ts' }, agent: Object.ass
 const afterOtherTool = await (await getState(headers())).json()
 check('focus: another workspace tools are ignored', String(afterOtherTool.deed) === String(beforeOtherTool.deed), afterOtherTool.deed)
 
-// a turn ending in a workspace the window is not showing: a quiet line instead of a victory
+// a turn ending in a workspace the window is not showing: a hop and a quiet line, never a victory
+const OTHER_LINES = ['Другая я закончила.', 'Та, вторая, закончила.', 'В соседнем окне готово.']
 const beforeOtherTurn = await (await getState(headers())).json()
 approval({ id: 'sess-b' }, { type: 'turn/end', data: { turn: {} } })
 const otherTurn = await (await getState(headers())).json()
-check('other workspace: she says another one finished', String(otherTurn.line).includes('Другая я закончила'), otherTurn.line)
-check('other workspace: no victory for the open one', otherTurn.act === beforeOtherTurn.act && otherTurn.mode !== 'done', `${otherTurn.mode}/${otherTurn.act}`)
+check('other workspace: she hops', otherTurn.act === 'hop', otherTurn.act)
+check('other workspace: a line from the other set', OTHER_LINES.includes(String(otherTurn.line)), otherTurn.line)
+check('other workspace: no victory for the open one', otherTurn.mode !== 'done', `${otherTurn.mode}/${otherTurn.act}`)
 approval({ id: 'sess-b' }, { type: 'turn/end', data: { turn: {} } })
 const otherTurnAgain = await (await getState(headers())).json()
 check('other workspace: no repeat spam', otherTurnAgain.lineSeq === otherTurn.lineSeq, `${otherTurn.lineSeq}->${otherTurnAgain.lineSeq}`)
+await new Promise((resolve) => setTimeout(resolve, 1100))
+const settled = await (await getState(headers())).json()
+check('other workspace: the open scene comes back', settled.act !== 'hop', settled.act)
 
 const badFocus = await callPost('/capri/focus', { id: 'bad id!' }, headers())
 check('focus: bad id refused', badFocus.status === 400, String(badFocus.status))

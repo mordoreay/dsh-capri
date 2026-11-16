@@ -32,7 +32,8 @@ character, drawn inside the DSH window, with no second Electron process and no P
 - **Turn summary**: when a turn ends the panel shows what it cost — actions, files, time.
 - **Her own session only**: she follows the workspace the window is showing — background sessions and
   subagents stay uncommented, so she does not celebrate someone else's work or raise the alarm for
-  nothing. If a turn ends elsewhere, she just says «Другая я закончила.».
+  nothing. If a turn ends elsewhere, she hops once and says «Другая я закончила.» — no victory, no
+  alarm — and the open workspace's scene comes back.
 - **Sound**: quiet cues from the original's own synth engine (Web Audio, no audio files) — a blip on a
   line, a tick while working, the alarm, the victory, an error, a purr when you pet her. Turned on and
   levelled in settings; the first cue needs a click in the window, that is the browser's rule.
