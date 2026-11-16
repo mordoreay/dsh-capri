@@ -1304,16 +1304,10 @@ window.__ModuleLoader__.load({
           label: 'Capri',
         }, Pet))
 
-        const offSettings = ctx.slots.inject('settings.section', () => ctx.slots.register({
-          name: 'settings.section',
-          id: 'capri',
-          order: 26,
-          label: 'Capri',
-        }, () => h('div', { className: 'dsh-capri-settings' }, h(Settings, {}))))
-
+        // No `settings.section`: the page rendered empty in the settings dialog and the whole set
+        // lives behind the gear under her, right next to the thing it configures.
         return () => {
           if (typeof offPet === 'function') offPet()
-          if (typeof offSettings === 'function') offSettings()
         }
       },
     }

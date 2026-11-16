@@ -44,7 +44,7 @@ character, drawn inside the DSH window, with no second Electron process and no P
 
 ## Settings
 
-**Settings → Capri** (or ⚙ under her): size 50–400 %, window side (left/right), language
+**The ⚙ under her** (the floating panel): size 50–400 %, window side (left/right), language
 (Russian/English), "come for permission". Stored in `~/.dsh/capri.json`, applied instantly.
 
 ## How the frames are made
@@ -68,7 +68,7 @@ sheets — animation on twos, 12 drawings per second.
 
 An unofficial adaptation of [mochiiwuff/capri-desktop](https://github.com/mochiiwuff/capri-desktop):
 the character, her artwork, poses and lines come from there; the plugin, the host and client halves,
-the settings page and the offline frame renderer come from this repository
+the panel settings and the offline frame renderer come from this repository
 ([mordoreay/dsh-capri](https://github.com/mordoreay/dsh-capri)). The original's code is under
 PolyForm Noncommercial 1.0.0 and so is this adaptation: free, never for sale. The character frames
 are output of the original's own shader and exposure sheets and are not covered by the code licence.

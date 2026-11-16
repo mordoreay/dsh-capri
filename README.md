@@ -122,7 +122,7 @@ entry and press install. The index pins the exact commit of each version.
 ### After installation
 
 - She stands in the bottom-right corner, the ticker is right under her, the panel above.
-- **Settings → Capri** (or the **⚙** under her): size, side, language, approvals.
+- **The ⚙ under her**: size, side, language, approvals, sound, breaks.
 - To uninstall: **Plugins → Capri → Remove**. Do it there, not by deleting the folder.
 
 ### Something went wrong?
@@ -136,7 +136,7 @@ entry and press install. The index pins the exact commit of each version.
 
 ## Settings
 
-**Settings → Capri** (or ⚙ under her):
+**The ⚙ under her** (the floating panel):
 
 | Setting | Values | Notes |
 |---|---|---|
@@ -189,7 +189,7 @@ package.json          DSH bundle manifest (host + client halves)
 cordis.patch.yml      loader row for the bundle
 index.js              host half: tool/turn/approval events, scene, settings, HTTP bridge
 brain.js              what she says and which clip each tool plays
-client.js             browser half: the pet, the ticker, the panel, the settings page
+client.js             browser half: the pet, the ticker, the panel and its settings
 assets/frames/<clip>/ the rendered drawings (lossless WebP)
 assets/faces/         her seven faces for the panel
 assets/clips.json     the clips: [[drawing, ms], ...] per clip
