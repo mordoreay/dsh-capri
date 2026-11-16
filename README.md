@@ -26,8 +26,9 @@ words, a panel with her face, and a mode for when the agent needs your decision.
   the satellite, angry, celebrating, facepalm, the alarm, and the small flourishes.
 - **Reacts to tools**: reading — she looks, editing — she cocks her head, searching — she looks
   around, a shell command — red lightning (`zap`), the web — she reaches for the satellite, a
-  subagent — her other minds split away. She follows the session you are working in: a subagent's
-  own turns and approvals do not make her celebrate or raise the alarm.
+  subagent — her other minds split away. She follows the workspace the window is showing: other
+  sessions running in the background are ignored, and a subagent's own turns and approvals never make
+  her celebrate or raise the alarm.
 - **Ticker under her**: verb and target (`EDITS gigs.ts`, `RUNS npm test`, `GREPS "paginate"`); command
   values are never shown, only the first two words.
 - **Turn summary**: when a turn ends the panel shows what it cost — `12 действий · 3 файла · 2 м 14 с`.

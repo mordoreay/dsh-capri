@@ -1222,6 +1222,31 @@ window.__ModuleLoader__.load({
     return {
       inject: ['slots'],
       apply(ctx) {
+        // Tell the host which session the window is showing: it reads the GUI's own marker on the
+        // conversation, so she comments on the open workspace instead of every running one.
+        let lastFocus = null
+        let focusTimer = 0
+        const reportFocus = () => {
+          try {
+            const nodes = Array.from(document.querySelectorAll('[data-conversation-region="chat"]'))
+            const shown = nodes.find((node) => node.getClientRects().length > 0)
+            const id = shown ? (shown.getAttribute('data-conversation-session') || '') : ''
+            if (id === lastFocus) return
+            lastFocus = id
+            fetch('/capri/focus', {
+              method: 'POST',
+              headers: { 'content-type': 'application/json' },
+              body: JSON.stringify({ id }),
+              cache: 'no-store',
+            }).catch(() => {})
+          } catch { /* no DOM: leave the filter alone */ }
+        }
+        ctx.effect(() => {
+          reportFocus()
+          focusTimer = setInterval(reportFocus, 600)
+          return () => clearInterval(focusTimer)
+        })
+
         const offPet = ctx.slots.inject('shell.overlay', () => ctx.slots.register({
           name: 'shell.overlay',
           id: 'capri-pet',

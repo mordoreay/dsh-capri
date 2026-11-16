@@ -301,6 +301,35 @@ check('pose: showreel lists every clip once', reel.json && Array.isArray(reel.js
 const afterReel = await (await getState(headers())).json()
 check('pose: showreel starts at the first clip', afterReel.act === 'stand' && afterReel.mode === 'idle', `${afterReel.mode}/${afterReel.act}`)
 
+// ── focus: she follows the session the window shows ───────────────────────────────────────────
+await new Promise((resolve) => setTimeout(resolve, 500))
+const focusSet = await callPost('/capri/focus', { id: 'sess-a' }, headers())
+check('focus: accepted', focusSet.status === 200 && focusSet.json.focused === 'sess-a', JSON.stringify(focusSet.json && focusSet.json.focused))
+const focusCfg = await (await getConfig(headers())).json()
+check('focus: config reports the session', focusCfg.focused === 'sess-a', String(focusCfg.focused))
+
+approval({ id: 'sess-b' }, { type: 'approval/asked', data: { id: 'b1', toolName: 'write' } })
+const otherSession = await (await getState(headers())).json()
+check('focus: another workspace does not raise the alarm', otherSession.mode !== 'alert', `${otherSession.mode}/${otherSession.act}`)
+
+approval({ id: 'sess-a' }, { type: 'approval/asked', data: { id: 'a9', toolName: 'write' } })
+const mineSession = await (await getState(headers())).json()
+check('focus: the open workspace still does', mineSession.mode === 'alert', `${mineSession.mode}/${mineSession.act}`)
+approval({ id: 'sess-a' }, { type: 'approval/decided', data: { id: 'a9', outcome: 'allowed-once' } })
+
+const beforeOtherTool = await (await getState(headers())).json()
+pre({ name: 'edit', arguments: { file_path: 'C:/x/other.ts' }, agent: Object.assign(Object.create(Object.getPrototypeOf(fakeAgent)), fakeAgent, { session: { id: 'sess-b' } }) }, () => {})
+const afterOtherTool = await (await getState(headers())).json()
+check('focus: another workspace tools are ignored', String(afterOtherTool.deed) === String(beforeOtherTool.deed), afterOtherTool.deed)
+
+const badFocus = await callPost('/capri/focus', { id: 'bad id!' }, headers())
+check('focus: bad id refused', badFocus.status === 400, String(badFocus.status))
+const focusSite = await callPost('/capri/focus', { id: 'sess-a' }, headers({ 'sec-fetch-site': 'cross-site' }))
+check('focus: cross-site refused', focusSite.status === 403)
+await callPost('/capri/focus', { id: '' }, headers())
+const focusCleared = await (await getConfig(headers())).json()
+check('focus: cleared means watching everything', focusCleared.focused === '', String(focusCleared.focused))
+
 // ── packaging: anything the modules import must survive an npm pack ──────────────────────────
 // A missing entry in "files" installs a plugin that dies on import; this check catches it here.
 {

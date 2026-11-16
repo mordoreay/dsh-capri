@@ -337,10 +337,11 @@ export function apply(ctx) {
       if (!actx || typeof actx.on !== 'function') return
       seenAgents.add(agent)
       stats.agents += 1
+      const agentSession = (agent.session && agent.session.id) || ''
       const offs = [
-        actx.on('agent/turn-stopping', () => { try { done() } catch { /* silent */ } }),
-        actx.on('agent/error', () => { try { fail('') } catch { /* silent */ } }),
-        actx.on('agent/status', (payload) => { try { onStatus(payload) } catch { /* silent */ } }),
+        actx.on('agent/turn-stopping', () => { try { if (watching(agentSession)) done() } catch { /* silent */ } }),
+        actx.on('agent/error', () => { try { if (watching(agentSession)) fail('') } catch { /* silent */ } }),
+        actx.on('agent/status', (payload) => { try { if (watching(agentSession)) onStatus(payload) } catch { /* silent */ } }),
       ]
       if (typeof actx.effect === 'function') {
         actx.effect(() => () => {
@@ -456,12 +457,20 @@ export function apply(ctx) {
 
   // ── events ────────────────────────────────────────────────────────────────────────────────
 
+  // Which session the window is showing, reported by the client (it reads the GUI's own
+  // data-conversation-session attribute). Empty means "unknown": then she watches everything, which
+  // is the behaviour of an older client and the safe fallback.
+  let focused = ''
+  const FOCUS_RE = /^[A-Za-z0-9_.:-]{1,128}$/
+  const watching = (sessionId) => !focused || !sessionId || sessionId === focused
+
   ctx.on('tools/pre-execute', function preExecute(exec, next) {
     try {
       const tool = exec && exec.name
       const input = exec && exec.arguments
       attachAgent(exec && exec.agent)
-      if (tool) notice(tool, input)
+      const sessionId = exec && exec.agent && exec.agent.session && exec.agent.session.id
+      if (tool && watching(sessionId)) notice(tool, input)
     } catch { /* an observer must not break the tool */ }
     // never answer the waterfall on the tool's behalf: no decision, or hand it on
     return typeof next === 'function' ? next() : undefined
@@ -504,6 +513,8 @@ export function apply(ctx) {
         return
       }
       if (isSubSession(session)) return
+      // another workspace is running: she follows the window that is actually open
+      if (!watching(session && session.id)) return
       // a new turn starts clean: the previous summary and the error streak belong to the old one
       if (event.type === 'turn/start') {
         resetTurn()
@@ -544,6 +555,8 @@ export function apply(ctx) {
     // how many pet instances the most recent page mounted (more than one = stacked copies)
     pets: Array.from(petPages.values()).at(-1) || 0,
     pages: petPages.size,
+    // which session the window is showing; empty means she watches every session
+    focused,
     types: stats.types,
     acts: ACT_NAMES.length,
     // name -> drawing count, small enough to ship on every settings open (the full steps are only
@@ -721,6 +734,14 @@ export function apply(ctx) {
     }, delay || (18_000 + Math.random() * 22_000))
   }
 
+  // The client reports which session the window shows. Empty clears the filter.
+  const focusHandler = handler(async (body) => {
+    const id = body && typeof body.id === 'string' ? body.id.trim() : ''
+    if (id && !FOCUS_RE.test(id)) throw new Error('bad session id')
+    focused = id
+    return { ok: true, focused }
+  })
+
   // A clip without a caption: dragging her should not make the panel announce "grabbed".
   const touchHandler = handler(async (body) => {
     const act = body && typeof body.act === 'string' ? body.act.trim() : ''
@@ -735,6 +756,7 @@ export function apply(ctx) {
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/state', resource: stateRoute }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/poke', handler: pokeHandler }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/hello', handler: helloHandler }))
+  ctx.effect(() => server.register({ kind: 'exact', path: '/capri/focus', handler: focusHandler }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/pose', handler: poseHandler }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/touch', handler: touchHandler }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/config', resource: configRoute }))
