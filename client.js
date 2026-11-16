@@ -424,9 +424,18 @@ window.__ModuleLoader__.load({
       const [now, setNow] = useState(() => Date.now())
       useEffect(() => {
         if (!active) return undefined
+        // rAF instead of a fixed interval: the fast sheets hold drawings for 42 ms, and an 83 ms
+        // timer silently dropped half of them (turn played at 415 ms instead of 251)
         let alive = true
-        const id = setInterval(() => { if (alive) setNow(Date.now()) }, ms)
-        return () => { alive = false; clearInterval(id) }
+        let raf = 0
+        let last = 0
+        const step = (stamp) => {
+          if (!alive) return
+          if (stamp - last >= ms) { last = stamp; setNow(Date.now()) }
+          raf = requestAnimationFrame(step)
+        }
+        raf = requestAnimationFrame(step)
+        return () => { alive = false; cancelAnimationFrame(raf) }
       }, [active, ms])
       return now
     }
@@ -647,7 +656,15 @@ window.__ModuleLoader__.load({
     function Pet() {
       const scene = useScene()
       const vp = useViewport()
-      const now = useTick(Boolean(scene && scene.steps), 83)
+      // the tick follows the sheet: a fast act (42 ms holds) needs ~40 fps, a calm one is fine at 12
+      const tickMs = (() => {
+        const steps = scene && Array.isArray(scene.steps) ? scene.steps : null
+        if (!steps || !steps.length) return 83
+        let min = Infinity
+        for (const step of steps) if (step[1] < min) min = step[1]
+        return Math.max(16, Math.min(83, Math.floor(min / 2)))
+      })()
+      const now = useTick(Boolean(scene && scene.steps), tickMs)
       const [panel, setPanel] = useState(false)
       const [bubble, setBubble] = useState(false)
       const bubbleTimer = useRef(0)
@@ -752,8 +769,11 @@ window.__ModuleLoader__.load({
       useEffect(() => {
         const was = prevShot.current
         if (!scene || !was.act || was.act === scene.act || !was.frame) return
-        setGhost({ act: was.act, frame: was.frame })
-        const timer = setTimeout(() => setGhost(null), 150)
+        // a quick beat needs a quick dissolve; a slow, heavy one can afford a longer one
+        const total = (scene.steps || []).reduce((sum, step) => sum + step[1], 0)
+        const ms = total <= 900 ? 70 : total >= 2000 ? 200 : 140
+        setGhost({ act: was.act, frame: was.frame, ms })
+        const timer = setTimeout(() => setGhost(null), ms + 30)
         return () => clearTimeout(timer)
       }, [scene && scene.act])
 
@@ -896,6 +916,7 @@ window.__ModuleLoader__.load({
           ? h('img', {
             key: 'ghost', className: 'dsh-capri-ghost',
             src: frameSrc(ghost.act, ghost.frame, scene.asset), width, height, alt: '', draggable: false,
+            style: { animationDuration: `${ghost.ms}ms` },
           })
           : null, frame
           ? h('img', {
