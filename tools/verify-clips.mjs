@@ -22,15 +22,25 @@ const check = (name, ok, detail = '') => {
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${name}${detail ? ` — ${detail}` : ''}`)
 }
 
-// ── PNG sanity, straight from the IHDR chunk ──────────────────────────────────────────────────
-function pngInfo(buf) {
-  const signature = buf.subarray(0, 8).toString('hex')
-  if (signature !== '89504e470d0a1a0a') return null
-  const width = buf.readUInt32BE(16)
-  const height = buf.readUInt32BE(20)
-  const bitDepth = buf[24]
-  const colorType = buf[25]
-  return { width, height, bitDepth, colorType }
+// ── WebP sanity, straight from the RIFF container ────────────────────────────────────────────
+// The frames are lossless WebP: a RIFF header, then a VP8X canvas header (alpha) or a bare VP8L
+// bitstream, which carries its own 14-bit dimensions after the 0x2f signature.
+function webpInfo(buf) {
+  if (buf.subarray(0, 4).toString('ascii') !== 'RIFF') return null
+  if (buf.subarray(8, 12).toString('ascii') !== 'WEBP') return null
+  const chunk = buf.subarray(12, 16).toString('ascii')
+  if (chunk === 'VP8X') {
+    const width = 1 + buf.readUIntLE(24, 3)
+    const height = 1 + buf.readUIntLE(27, 3)
+    return { width, height, lossless: true }
+  }
+  if (chunk === 'VP8L') {
+    if (buf[20] !== 0x2f) return null
+    const bits = buf.readUInt32LE(21)
+    return { width: 1 + (bits & 0x3fff), height: 1 + ((bits >> 14) & 0x3fff), lossless: true }
+  }
+  if (chunk === 'VP8 ') return null // lossy: never produced by the renderer
+  return null
 }
 
 const ACTS = Object.keys(clips.acts)
@@ -51,12 +61,12 @@ for (const name of ACTS) {
   let bad = ''
 
   for (const [frame, ms] of act.steps) {
-    const file = path.join(dir, `${frame}.png`)
+    const file = path.join(dir, `${frame}.webp`)
     let buf
-    try { buf = await readFile(file) } catch { bad ||= `missing ${frame}.png`; continue }
-    const info = pngInfo(buf)
-    if (!info) { bad ||= `${frame}.png is not a PNG`; continue }
-    if (info.width !== canvas.width || info.height !== canvas.height) bad ||= `${frame}.png is ${info.width}x${info.height}`
+    try { buf = await readFile(file) } catch { bad ||= `missing ${frame}.webp`; continue }
+    const info = webpInfo(buf)
+    if (!info) { bad ||= `${frame}.webp is not a WebP`; continue }
+    if (info.width !== canvas.width || info.height !== canvas.height) bad ||= `${frame}.webp is ${info.width}x${info.height}`
     if (buf.length < 500) empty += 1
     hashes.add(createHash('sha1').update(buf).digest('hex'))
     total += ms
@@ -69,7 +79,7 @@ for (const name of ACTS) {
   if (!act.steps.length) problems.push(`${name}: no steps`)
   if (hashes.size < 2 && act.steps.length > 1) problems.push(`${name}: static (all ${act.steps.length} drawings identical)`)
   const declared = act.steps.length
-  const onDisk = files.filter((f) => f.endsWith('.png')).length
+  const onDisk = files.filter((f) => f.endsWith('.webp')).length
   if (onDisk !== declared) problems.push(`${name}: ${onDisk} files on disk, ${declared} in the sheet`)
 
   const kind = act.loop ? 'loop' : 'one-shot'

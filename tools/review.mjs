@@ -345,6 +345,36 @@ await callPost('/capri/focus', { id: '' }, headers())
 const focusCleared = await (await getConfig(headers())).json()
 check('focus: cleared means watching everything', focusCleared.focused === '', String(focusCleared.focused))
 
+// ── breaks ────────────────────────────────────────────────────────────────────────────────────
+const breakOn = await callPost('/capri/settings', { breaks: true }, headers())
+check('breaks: enabled by default state', breakOn.json && breakOn.json.breaks === true)
+const breakOff = await callPost('/capri/settings', { breaks: false }, headers())
+check('breaks: can be turned off', breakOff.json && breakOff.json.breaks === false)
+await callPost('/capri/settings', { breaks: true }, headers())
+const breakNow = await callPost('/capri/break', {}, headers())
+check('breaks: manual nudge plays the stretch', breakNow.status === 200 && breakNow.json.act === 'stretch', String(breakNow.status))
+const breakState = await (await getState(headers())).json()
+check('breaks: it says something about a pause', ['45 минут. Разомнись.', 'Перерыв. Встань, choom.'].includes(String(breakState.line)), breakState.line)
+
+// ── the scene stream ──────────────────────────────────────────────────────────────────────────
+{
+  const events = []
+  const req = new Readable({ read() {} })
+  req.method = 'GET'
+  req.headers = { get: (k) => (k.toLowerCase() === 'host' ? '127.0.0.1:49529' : undefined) }
+  const res = {
+    status: 0,
+    headers: {},
+    writeHead(status, headers) { this.status = status; this.headers = headers || {} },
+    write(line) { events.push(line) },
+    on() {},
+  }
+  routes.get('/capri/stream').handler(req, res)
+  check('stream: opens as an event-stream', res.status === 200 && /text\/event-stream/.test(String(res.headers['content-type'])), String(res.status))
+  await new Promise((resolve) => setTimeout(resolve, 80))
+  check('stream: sends the scene as data', events.some((line) => line.startsWith('data: ') && line.includes('"mode"') && line.includes('"seq"')), events[0] && events[0].slice(0, 40))
+}
+
 // ── packaging: anything the modules import must survive an npm pack ──────────────────────────
 // A missing entry in "files" installs a plugin that dies on import; this check catches it here.
 {

@@ -22,7 +22,7 @@ const clampSide = (value) => (SIDES.includes(value) ? value : 'right')
 const clampVolume = (value) => Math.min(100, Math.max(0, Math.round(Number(value) || 0)))
 // Where the drag left her, relative to her corner. Bounded so a bad value cannot park her off-screen.
 const clampOffset = (value) => Math.min(4000, Math.max(-4000, Math.round(Number(value) || 0)))
-const freshConfig = () => ({ scale: 100, side: 'right', lang: 'ru', alerts: true, sound: true, volume: 30, x: 0, y: 0 })
+const freshConfig = () => ({ scale: 100, side: 'right', lang: 'ru', alerts: true, sound: true, volume: 30, breaks: true, x: 0, y: 0 })
 
 // Russian needs three plural forms; English takes two. Used by the turn summary.
 function plural(count, forms, lang) {
@@ -142,6 +142,7 @@ export function apply(ctx) {
       lang: config.lang,
       sound: config.sound,
       volume: config.volume,
+      breaks: config.breaks,
       x: config.x,
       y: config.y,
       canvas: CLIPS.canvas,
@@ -190,6 +191,7 @@ export function apply(ctx) {
     const quiet = Date.now() - scene.lastActivity
     if (quiet > SLEEP_AFTER) {
       scene.mode = 'sleep'
+      breakAnchor = 0
       play('sleep', { mode: 'sleep', face: FACE.sleep, line: lineFor('sleep', config.lang) })
       return
     }
@@ -238,9 +240,27 @@ export function apply(ctx) {
 
   // ── what the agent does ────────────────────────────────────────────────────────────────────
 
+  // Long unbroken work: after a while she stretches and suggests a pause, once per stretch of work.
+  const BREAK_AFTER = 45 * 60_000
+  let breakAnchor = 0
+  function breakNudge(manual) {
+    if (scene.reeling || scene.mode === 'alert') return false
+    if (!manual && !config.breaks) return false
+    breakAnchor = Date.now()
+    play('stretch', { mode: 'work', line: lineFor('break', config.lang), face: FACE.idle })
+    return true
+  }
+  function noteWork() {
+    const now = Date.now()
+    if (!breakAnchor) { breakAnchor = now; return }
+    if (now - breakAnchor < BREAK_AFTER) return
+    breakNudge(false)
+  }
+
   function notice(tool, input) {
     const deed = deedOf(tool, input, config.lang)
     const now = Date.now()
+    noteWork()
     errorStreak = 0
     if (!turn.started) turn.started = now
     turn.actions += 1
@@ -577,6 +597,7 @@ export function apply(ctx) {
     alerts: config.alerts,
     sound: config.sound,
     volume: config.volume,
+    breaks: config.breaks,
     x: config.x,
     y: config.y,
     approvals: stats.approvals,
@@ -612,6 +633,7 @@ export function apply(ctx) {
       if (data.alerts !== undefined) config.alerts = data.alerts === true || data.alerts === 'true'
       if (data.sound !== undefined) config.sound = data.sound === true || data.sound === 'true'
       if (data.volume !== undefined) config.volume = clampVolume(data.volume)
+      if (data.breaks !== undefined) config.breaks = data.breaks !== false
       if (data.x !== undefined) config.x = clampOffset(data.x)
       if (data.y !== undefined) config.y = clampOffset(data.y)
     } catch { /* no settings yet */ }
@@ -717,6 +739,7 @@ export function apply(ctx) {
     }
     if (body && body.sound !== undefined) config.sound = body.sound === true || body.sound === 'true'
     if (body && body.volume !== undefined) config.volume = clampVolume(body.volume)
+    if (body && body.breaks !== undefined) config.breaks = body.breaks === true || body.breaks === 'true'
     if (body && body.x !== undefined) config.x = clampOffset(body.x)
     if (body && body.y !== undefined) config.y = clampOffset(body.y)
     await saveConfig()
@@ -784,11 +807,49 @@ export function apply(ctx) {
     return { ok: true, act }
   })
 
+  // The scene as a stream: one connection instead of four polls a second. Only changes are written,
+  // plus a keep-alive comment so a quiet scene does not look like a dead socket.
+  const streamHandler = (request, response) => {
+    try {
+      if (!trusted(request)) { response.writeHead(403, { 'content-type': 'text/plain; charset=utf-8' }); response.end('forbidden'); return }
+      if (request.method !== 'GET') { response.writeHead(405); response.end(); return }
+      response.writeHead(200, {
+        'content-type': 'text/event-stream; charset=utf-8',
+        'cache-control': 'no-store',
+        connection: 'keep-alive',
+      })
+      let lastSeq = -1
+      const push = () => {
+        try {
+          const next = snapshot()
+          if (next.seq === lastSeq) return
+          lastSeq = next.seq
+          response.write(`data: ${JSON.stringify(next)}\n\n`)
+        } catch { /* the socket is gone */ }
+      }
+      push()
+      const timer = setInterval(push, 250)
+      const ping = setInterval(() => { try { response.write(': ping\n\n') } catch { /* closed */ } }, 15_000)
+      const stop = () => { clearInterval(timer); clearInterval(ping) }
+      request.on('close', stop)
+      request.on('error', stop)
+      response.on('close', stop)
+    } catch { /* a dead stream must not take the host down */ }
+  }
+
+  // Manual break, also used by `/capri break` and by the checks.
+  const breakHandler = handler(async () => {
+    if (!breakNudge(true)) throw new Error('she cannot take a break right now')
+    return { ok: true, act: 'stretch' }
+  })
+
   const server = ctx.webServer
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/state', resource: stateRoute }))
+  ctx.effect(() => server.register({ kind: 'exact', path: '/capri/stream', handler: streamHandler }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/poke', handler: pokeHandler }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/hello', handler: helloHandler }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/focus', handler: focusHandler }))
+  ctx.effect(() => server.register({ kind: 'exact', path: '/capri/break', handler: breakHandler }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/pose', handler: poseHandler }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/touch', handler: touchHandler }))
   ctx.effect(() => server.register({ kind: 'exact', path: '/capri/config', resource: configRoute }))
@@ -807,6 +868,11 @@ export function apply(ctx) {
           if (!word || word === 'all' || word === 'все') {
             const list = showreelAll()
             return { kind: 'success', text: lx(`Показываю ${list.length} клипов.`, `Showing ${list.length} clips.`) }
+          }
+          if (word === 'break' || word === 'перерыв') {
+            return breakNudge(true)
+              ? { kind: 'success', text: lx('Перерыв. Разомнись.', 'Break. Stretch.') }
+              : { kind: 'error', text: lx('Сейчас не до перерыва.', 'Not now.') }
           }
           if (!playOne(ACT_NAMES.find((name) => name.toLowerCase() === word))) {
             return { kind: 'error', text: `Клипы: ${ACT_NAMES.join(', ')}` }

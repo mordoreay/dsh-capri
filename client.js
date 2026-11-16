@@ -369,7 +369,7 @@ window.__ModuleLoader__.load({
     const POKE_URL = '/capri/poke'
     const SETTINGS_URL = '/capri/settings'
 
-    const frameSrc = (act, frame, v = '2') => `/plugins/dsh-capri/assets/frames/${encodeURIComponent(act)}/${encodeURIComponent(frame)}.png?v=${encodeURIComponent(v)}`
+    const frameSrc = (act, frame, v = '2') => `/plugins/dsh-capri/assets/frames/${encodeURIComponent(act)}/${encodeURIComponent(frame)}.webp?v=${encodeURIComponent(v)}`
     const faceSrc = (face) => `/plugins/dsh-capri/assets/faces/${encodeURIComponent(face || 'calm')}.png?v=2`
 
     // ── one poll for the whole page ──────────────────────────────────────────────────────────
@@ -378,19 +378,21 @@ window.__ModuleLoader__.load({
     let current = null
     let timer = null
     let inflight = false
+    let stream = null
+
+    function publish(next) {
+      current = next
+      for (const listener of listeners) {
+        try { listener(next) } catch { /* one bad subscriber must not stop the others */ }
+      }
+    }
 
     async function poll() {
       if (inflight) return
       inflight = true
       try {
         const response = await fetch(STATE_URL, { cache: 'no-store' })
-        if (response.ok) {
-          const next = await response.json()
-          current = next
-          for (const listener of listeners) {
-            try { listener(next) } catch { /* one bad subscriber must not stop the others */ }
-          }
-        }
+        if (response.ok) publish(await response.json())
       } catch {
         // the host can be restarting: keep the last scene on screen
       } finally {
@@ -398,18 +400,47 @@ window.__ModuleLoader__.load({
       }
     }
 
+    function beginPolling() {
+      if (timer) return
+      timer = setInterval(poll, 250)
+      poll()
+    }
+
+    // One server-sent stream instead of four requests a second. If the stream cannot be opened or
+    // drops (host restart, a proxy that will not hold it), the old polling takes over silently.
+    function beginStream() {
+      if (stream || typeof EventSource !== 'function') { beginPolling(); return }
+      try {
+        stream = new EventSource('/capri/stream')
+      } catch {
+        stream = null
+        beginPolling()
+        return
+      }
+      stream.onmessage = (event) => {
+        try { publish(JSON.parse(event.data)) } catch { /* skip a malformed frame */ }
+      }
+      stream.onerror = () => {
+        const dead = stream
+        stream = null
+        try { if (dead) dead.close() } catch { /* already closed */ }
+        beginPolling()
+      }
+    }
+
     function subscribe(listener) {
       listeners.add(listener)
-      if (!timer) {
-        timer = setInterval(poll, 250)
-        poll()
-      }
+      if (!timer && !stream) beginStream()
       if (current) listener(current)
       return () => {
         listeners.delete(listener)
-        if (listeners.size === 0 && timer) {
-          clearInterval(timer)
-          timer = null
+        if (listeners.size === 0) {
+          if (timer) { clearInterval(timer); timer = null }
+          if (stream) {
+            const dead = stream
+            stream = null
+            try { dead.close() } catch { /* already closed */ }
+          }
         }
       }
     }
@@ -574,6 +605,8 @@ window.__ModuleLoader__.load({
         soundVolume: 'Громкость',
         soundTest: 'Проверить',
         soundHint: 'Она тихо поёт: клик по ней, тревога, победа, ошибка. Первый звук — только после клика в окне, так требует браузер.',
+        breaks: 'Перерывы',
+        breaksHint: 'Раз в 45 минут непрерывной работы она потягивается и предлагает паузу. Вручную — /capri break.',
         seen: (count, when, lang) => {
           if (!count) return 'Запросов разрешения она ещё не видела.'
           const at = when ? new Date(when).toLocaleTimeString(lang === 'en' ? 'en-US' : 'ru-RU') : ''
@@ -605,6 +638,8 @@ window.__ModuleLoader__.load({
         soundVolume: 'Volume',
         soundTest: 'Test',
         soundHint: 'She is quiet: a click, the alarm, the victory, an error. The first sound comes only after a click in the window — the browser insists.',
+        breaks: 'Breaks',
+        breaksHint: 'Every 45 minutes of unbroken work she stretches and suggests a pause. Manually — /capri break.',
         seen: (count, when, lang) => {
           if (!count) return 'She has not seen an approval request yet.'
           const at = when ? new Date(when).toLocaleTimeString(lang === 'en' ? 'en-US' : 'ru-RU') : ''
@@ -1197,6 +1232,21 @@ window.__ModuleLoader__.load({
             h('span', { className: 'dsh-capri-value' }, `${volume}%`),
           ),
           compact ? null : h('p', null, L.soundHint),
+        ),
+
+        h('section', null,
+          h('h3', null, L.breaks),
+          h('div', { className: 'dsh-capri-row' },
+            [true, false].map((value) => h('button', {
+              key: String(value),
+              type: 'button',
+              className: 'dsh-capri-button',
+              'data-active': String(value === (data.breaks !== false)),
+              disabled: busy,
+              onClick: () => save({ breaks: value }),
+            }, value ? L.on : L.off)),
+          ),
+          compact ? null : h('p', null, L.breaksHint),
         ),
 
         compact ? null : h('section', null,

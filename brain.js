@@ -109,6 +109,7 @@ const LINES = {
     recovered: ['Починилось. Прыг.', 'Ушло. Ладно.'],
     cancelled: ['Отменили. Ладно.', 'Ладно, проехали.'],
     other: ['Другая я закончила.', 'Та, вторая, закончила.', 'В соседнем окне готово.'],
+    break: ['45 минут. Разомнись.', 'Перерыв. Встань, choom.'],
     done: [
       'Готово. Неплохо.', 'Ход закрыт.', 'Чисто сработано.', 'Всё. Я довольна.',
       // from the original mod (lines.js, done)
@@ -149,6 +150,7 @@ const LINES = {
     recovered: ['Fixed. Hop.', 'Gone. Fine.'],
     cancelled: ['Cancelled. Fine.', 'Okay, dropped.'],
     other: ['Another me finished.', 'The other one finished.', 'Done in the other window.'],
+    break: ['45 minutes. Stretch.', 'Break. Get up, choom.'],
     done: [
       'Done. Not bad.', 'Turn closed.', 'Clean run.', 'That\'s it. I\'m pleased.',
       // from the original mod (lines.js, done)

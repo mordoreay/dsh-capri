@@ -1,10 +1,10 @@
 # tools — how the drawings are made
 
-The PNGs in `assets/frames/` are not drawn by hand and are not screenshots: they are renders of
+The WebP frames in `assets/frames/` are not drawn by hand and are not screenshots: they are renders of
 capri-desktop's own WebGL shader, driven with capri-desktop's own exposure sheets.
 
 ```
-pose (acting.js)  ->  sprite.js shader  ->  raw pixels  ->  compose.py  ->  PNG clip
+pose (acting.js)  ->  sprite.js shader  ->  raw pixels  ->  compose.py  ->  WebP clip
 ```
 
 | File | Role |
@@ -12,7 +12,7 @@ pose (acting.js)  ->  sprite.js shader  ->  raw pixels  ->  compose.py  ->  PNG 
 | `page.mjs` | runs in the browser: builds the pose of every drawing the way `capri.js` does (`NEUTRAL` + stance + act), draws it with her shader and reads the pixels back |
 | `serve.mjs` | static server and sink: serves the workspace, receives raw frames and the manifest |
 | `drive.mjs` | starts the server, launches headless Chrome on the page, waits for the manifest |
-| `compose.py` | bakes the CSS transforms the original applies on the desktop (float, lean, squash) into the frame, premultiplied so edges do not halo, and writes the PNGs |
+| `compose.py` | bakes the CSS transforms the original applies on the desktop (float, lean, squash) into the frame, premultiplied so edges do not halo, and writes the frames |
 | `compose-sheet.py` | contact sheet of every clip, for looking at all of them at once |
 | `review.mjs` | 52 checks of the host half: routes, guards, clamps, approvals, turn end, playback |
 | `verify-clips.mjs` | 29 checks of the assets: every drawing exists and decodes, clips animate, faces and line sets resolve |
@@ -40,7 +40,7 @@ pose (acting.js)  ->  sprite.js shader  ->  raw pixels  ->  compose.py  ->  PNG 
 
 ```sh
 node tools/drive.mjs --clean        # renders every drawing into tools/out/raw + manifest
-python tools/compose.py             # writes the PNG clips into tools/frames
+python tools/compose.py             # writes the WebP clips into tools/frames
 cp -r tools/frames/* ../assets/frames/   # from inside the repo root: assets/frames/
 cp tools/frames/clips.json assets/clips.json
 ```

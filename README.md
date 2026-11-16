@@ -190,7 +190,7 @@ cordis.patch.yml      loader row for the bundle
 index.js              host half: tool/turn/approval events, scene, settings, HTTP bridge
 brain.js              what she says and which clip each tool plays
 client.js             browser half: the pet, the ticker, the panel, the settings page
-assets/frames/<clip>/ the rendered drawings (PNG)
+assets/frames/<clip>/ the rendered drawings (lossless WebP)
 assets/faces/         her seven faces for the panel
 assets/clips.json     the clips: [[drawing, ms], ...] per clip
 locale/               plugin metadata for the Plugins page

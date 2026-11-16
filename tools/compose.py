@@ -5,7 +5,7 @@ RGBA pixels. Her squash/stretch, float (bob) and lean (tilt) are applied by CSS 
 original app (canvas transform around the sprite centre), so they are baked here: one affine pass
 per frame, premultiplied so the alpha edges do not halo.
 
-    python compose.py [--raw out] [--frames frames] [--quantize 192]
+    python compose.py [--raw out] [--frames frames]
 """
 import argparse
 import json
@@ -39,7 +39,6 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--raw", default="out")
     parser.add_argument("--frames", default="frames")
-    parser.add_argument("--quantize", type=int, default=192)
     args = parser.parse_args()
 
     raw_dir = Path(args.raw).resolve()
@@ -95,9 +94,8 @@ def main() -> int:
             moved = prem.transform((out_w, out_h), Image.AFFINE, (a, b, c, d, e, f),
                                    resample=Image.BICUBIC, fillcolor=(0, 0, 0, 0))
             image = Image.fromarray(unpremultiply(np.array(moved)), "RGBA")
-            if args.quantize:
-                image = image.quantize(colors=int(args.quantize), method=Image.FASTOCTREE)
-            image.save(act_dir / f"{frame['name']}.png", optimize=True)
+            # lossless WebP: the same pixels as the PNG the composer used to write, about 18% smaller
+            image.save(act_dir / f"{frame['name']}.webp", "WEBP", lossless=True, quality=100, method=4)
 
             steps.append([frame["name"], int(frame["hold"])])
             total += 1

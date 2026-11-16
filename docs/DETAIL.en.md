@@ -51,8 +51,8 @@ character, drawn inside the DSH window, with no second Electron process and no P
 
 The animation is not redrawn: `sprite.js` is her real WebGL shader and `acting.js` her real exposure
 sheets. An offline renderer (`capri-tools/` in the author's workspace) drives the needed poses through
-the shader and saves one PNG per key drawing; squash/stretch, float and lean are baked into the frame
-(they are CSS transforms in the original). The plugin plays the PNGs with the holds declared in the
+the shader and saves one drawing per key (lossless WebP); squash/stretch, float and lean are baked into the frame
+(they are CSS transforms in the original). The plugin plays those drawings with the holds declared in the
 sheets — animation on twos, 12 drawings per second.
 
 ## Security
