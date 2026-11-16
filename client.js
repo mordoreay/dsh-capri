@@ -472,7 +472,21 @@ window.__ModuleLoader__.load({
 .dsh-capri:not([data-capri-owned]){display:none!important}
 .dsh-capri-sprite{pointer-events:auto;cursor:grab;background:none;border:0;padding:0;display:block;
   position:relative;line-height:0;transform-origin:50% 100%;touch-action:none;
-  filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))}
+  filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));
+  animation:capri-breathe 3.6s ease-in-out infinite,capri-shadow 3.6s ease-in-out infinite}
+@keyframes capri-breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2px) scale(1.004)}}
+@keyframes capri-shadow{0%,100%{filter:drop-shadow(0 6px 14px rgba(0,0,0,.55))}50%{filter:drop-shadow(0 9px 18px rgba(0,0,0,.42))}}
+.dsh-capri-lean,.dsh-capri-inner{display:block;position:relative;transform-origin:50% 100%}
+.dsh-capri-lean{transition:transform 320ms ease-out}
+.dsh-capri-fx{position:absolute;inset:-26px;pointer-events:none;z-index:0;border-radius:12px}
+.dsh-capri-fx[data-fx="zap"]{background:radial-gradient(circle at 62% 42%,rgba(46,242,255,.38),transparent 62%);animation:capri-flash 190ms ease-out forwards}
+.dsh-capri-fx[data-fx="win"]{background:radial-gradient(circle at 50% 30%,rgba(140,255,61,.26),transparent 58%);animation:capri-flash 280ms ease-out forwards}
+.dsh-capri-fx[data-fx="alert"]{box-shadow:inset 0 0 70px rgba(255,30,90,.4);animation:capri-pulse 1.1s ease-in-out infinite}
+.dsh-capri-fx[data-fx="glitch"]{background:linear-gradient(90deg,rgba(255,30,90,.3),transparent 45%);animation:capri-glitch 220ms steps(3,end) forwards}
+@keyframes capri-flash{from{opacity:1}to{opacity:0}}
+@keyframes capri-pulse{0%,100%{opacity:.32}50%{opacity:.85}}
+@keyframes capri-glitch{0%{transform:translateX(0)}33%{transform:translateX(-3px)}66%{transform:translateX(3px)}100%{transform:translateX(0);opacity:0}}
+@media (prefers-reduced-motion: reduce){.dsh-capri-fx{display:none}}
 .dsh-capri-sprite:active{cursor:grabbing}
 .dsh-capri-frame{position:relative;z-index:1;display:block}
 .dsh-capri-ghost{position:absolute;inset:0;z-index:0;pointer-events:none;animation:capri-ghost 150ms ease-out forwards}
@@ -637,7 +651,27 @@ window.__ModuleLoader__.load({
     }
 
     function Bubble({ scene, visible }) {
-      if (!visible || !scene || !scene.line) return null
+      const line = scene && scene.line ? String(scene.line) : ''
+      const seq = scene ? scene.lineSeq : 0
+      const mode = scene ? scene.mode : ''
+      const [cut, setCut] = useState(0)
+
+      // her lines type themselves out, a blip every few letters, like the original's talk
+      useEffect(() => {
+        if (!visible || !line) { setCut(0); return undefined }
+        if (reducedMotion()) { setCut(line.length); return undefined }
+        setCut(0)
+        let shown = 0
+        const id = setInterval(() => {
+          shown += 1
+          setCut(shown)
+          if (shown % 5 === 0) { try { voice.play('blip', { mood: mode }) } catch { /* silent */ } }
+          if (shown >= line.length) clearInterval(id)
+        }, 22)
+        return () => clearInterval(id)
+      }, [seq, visible, line])
+
+      if (!visible || !scene || !line) return null
       const L = str(scene.lang)
       return h('div', { className: 'dsh-capri-panel dsh-capri-bubble', role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' },
         h('img', { className: 'face', src: faceSrc(scene.face), alt: '', draggable: false }),
@@ -646,7 +680,7 @@ window.__ModuleLoader__.load({
             h('b', null, L.capri),
             h('i', { 'data-mode': scene.mode }, scene.tag || ''),
           ),
-          h('p', null, scene.line),
+          h('p', null, line.slice(0, cut)),
           // always rendered: the box keeps its height whether or not there is a deed line
           h('div', { className: 'deed' }, scene.deed || ''),
         ),
@@ -670,6 +704,10 @@ window.__ModuleLoader__.load({
       const bubbleTimer = useRef(0)
       const lastLine = useRef(-1)
       const rootRef = useRef(null)
+      const spriteRef = useRef(null)
+      const [lean, setLean] = useState(0)
+      const [tilt, setTilt] = useState(0)
+      const leanAt = useRef(0)
       const [offset, setOffset] = useState({ x: 0, y: 0 })
       const drag = useRef({ active: false, moved: false, x: 0, y: 0 })
       const skipClick = useRef(false)
@@ -782,6 +820,43 @@ window.__ModuleLoader__.load({
         if (scene) prevShot.current = { act: scene.act, frame: frameAt(scene, now) }
       })
 
+      // she leans after the cursor when it comes close: the cheapest way to stop looking like a still
+      useEffect(() => {
+        if (reducedMotion()) return undefined
+        const onMove = (event) => {
+          const stamp = Date.now()
+          if (stamp - leanAt.current < 80) return
+          leanAt.current = stamp
+          const node = spriteRef.current
+          if (!node) return
+          const rect = node.getBoundingClientRect()
+          const dx = event.clientX - (rect.left + rect.width / 2)
+          const dy = event.clientY - (rect.top + rect.height / 2)
+          const reach = Math.max(420, rect.height * 0.8)
+          if (Math.hypot(dx, dy) > reach) { setLean(0); return }
+          setLean(Math.max(-4, Math.min(4, dx / 120)))
+        }
+        window.addEventListener('pointermove', onMove, { passive: true })
+        return () => window.removeEventListener('pointermove', onMove)
+      }, [])
+
+      // small head turns now and then, so a long idle hold is never a frozen picture
+      useEffect(() => {
+        if (reducedMotion()) return undefined
+        let alive = true
+        let turnTimer = 0
+        const schedule = () => {
+          turnTimer = setTimeout(() => {
+            if (!alive) return
+            setTilt((Math.random() < 0.5 ? -1 : 1) * (0.8 + Math.random() * 0.7))
+            turnTimer = setTimeout(() => { if (alive) setTilt(0) }, 380)
+            if (alive) schedule()
+          }, 6000 + Math.random() * 6000)
+        }
+        schedule()
+        return () => { alive = false; clearTimeout(turnTimer) }
+      }, [])
+
       // Her sounds. An AudioContext may only start inside a user gesture, so it is created on the
       // first click anywhere in the page and reused after that; until then she stays silent.
       const lastSound = useRef({ mode: '', act: '', lineSeq: -1 })
@@ -845,6 +920,13 @@ window.__ModuleLoader__.load({
       if (!claimed || !mine) return null
 
       const frame = frameAt(scene, now)
+      // a flash of lightning for a command, a red halo while a question is open, a glitch after a
+      // failure, sparks on a win: small overlays that make the beat land
+      const fx = scene.mode === 'alert' ? 'alert'
+        : scene.act === 'zap' ? 'zap'
+          : scene.act === 'flinch' || scene.act === 'ko' ? 'glitch'
+            : scene.act === 'victory' ? 'win'
+              : ''
       const { height, width, left } = layout(scene, vp.h)
       const frames = Array.isArray(scene.steps) ? Array.from(new Set(scene.steps.map((step) => step[0]))) : []
       const style = left
@@ -859,6 +941,7 @@ window.__ModuleLoader__.load({
         h('button', {
           type: 'button',
           className: 'dsh-capri-sprite',
+          ref: spriteRef,
           title: str(scene.lang).poke,
           'aria-label': str(scene.lang).poke,
           onPointerDown: (event) => {
@@ -912,18 +995,22 @@ window.__ModuleLoader__.load({
               cache: 'no-store',
             }).catch(() => {})
           },
-        }, ghost
-          ? h('img', {
-            key: 'ghost', className: 'dsh-capri-ghost',
-            src: frameSrc(ghost.act, ghost.frame, scene.asset), width, height, alt: '', draggable: false,
-            style: { animationDuration: `${ghost.ms}ms` },
-          })
-          : null, frame
-          ? h('img', {
-            key: 'frame', className: 'dsh-capri-frame',
-            src: frameSrc(scene.act, frame, scene.asset), width, height, alt: '', draggable: false,
-          })
-          : null),
+        }, h('div', { className: 'dsh-capri-lean', style: lean ? { transform: `rotate(${lean}deg)` } : undefined },
+          fx ? h('div', { key: `${fx}-${scene.seq}`, className: 'dsh-capri-fx', 'data-fx': fx, 'aria-hidden': true }) : null,
+          h('div', { className: 'dsh-capri-inner', style: tilt ? { transform: `rotate(${tilt}deg)` } : undefined },
+            ghost
+              ? h('img', {
+                key: 'ghost', className: 'dsh-capri-ghost',
+                src: frameSrc(ghost.act, ghost.frame, scene.asset), width, height, alt: '', draggable: false,
+                style: { animationDuration: `${ghost.ms}ms` },
+              })
+              : null,
+            frame
+              ? h('img', {
+                key: 'frame', className: 'dsh-capri-frame',
+                src: frameSrc(scene.act, frame, scene.asset), width, height, alt: '', draggable: false,
+              })
+              : null))),
         h('div', { className: 'dsh-capri-hud' },
           h('span', { className: 'dot', 'data-mode': scene.mode, 'aria-hidden': true }),
           h('span', { className: 'deed', title: scene.deed || '' }, scene.deed || scene.tag || ''),

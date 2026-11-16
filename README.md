@@ -33,7 +33,12 @@ words, a panel with her face, and a mode for when the agent needs your decision.
 - **Turn summary**: when a turn ends the panel shows what it cost — `12 действий · 3 файла · 2 м 14 с`.
 - **Pick her up**: drag her anywhere in the window; she plays `grabbed` while held and `land` when you
   let go. The spot is remembered in `~/.dsh/capri.json` and restored after a restart.
-- **Smooth changes**: clips dissolve into each other over 150 ms instead of cutting.
+- **Smooth changes**: clips dissolve into each other over 150 ms instead of cutting, and she keeps
+  breathing — a slow rise and a light shiver of the line — so a long hold never freezes.
+- **Alive when idle**: she turns her head now and then, leans after the cursor when it comes close, and
+  finds herself a small gesture every 18–40 seconds instead of standing still.
+- **Her lines type themselves** out with a blip every few letters, and the beats land: a flash of
+  lightning on a command, a red halo while a question is open, a glitch after a failure.
 - **Reachable by keyboard**: Tab focuses her, Space pokes her, and every line is a live region, so a
   screen reader announces it.
 - **Panel**: her face (frames from the show), name, mode tag, the line, and what is being worked on.
