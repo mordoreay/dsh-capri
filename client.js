@@ -972,6 +972,7 @@ window.__ModuleLoader__.load({
           type: 'button',
           className: 'dsh-capri-sprite',
           ref: spriteRef,
+          style: bottomPad ? { marginBottom: -bottomPad } : undefined,
           title: str(scene.lang).poke,
           'aria-label': str(scene.lang).poke,
           onPointerDown: (event) => {
