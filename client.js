@@ -60,19 +60,9 @@ window.__ModuleLoader__.load({
         }
       }
 
-      async loadCustom(list) {
-        const ctx = this.ensure();
-        this.custom.clear();
-        for (const { name, url } of list) {
-          if (!CUES.includes(name)) continue;
-          try {
-            const data = await (await fetch(url)).arrayBuffer();
-            this.custom.set(name, await ctx.decodeAudioData(data));
-          } catch (err) {
-            console.warn('[capri] could not load sound', name, err);
-          }
-        }
-      }
+      // (the original's loadCustom(url) is deliberately not ported: the plugin never fetches audio
+      // from a URL, so there is no reason to keep a code path that would.)
+
 
       play(cue, opts = {}) {
         if (this.muted) return;

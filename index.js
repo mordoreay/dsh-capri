@@ -641,10 +641,14 @@ export function apply(ctx) {
 
   // ── HTTP ─────────────────────────────────────────────────────────────────────────────────
 
+  // Every answer says what it is and refuses to be sniffed into something else: a JSON body can
+  // never be read as HTML or a script, even if a local page manages to request it.
+  const SECURE = { 'x-content-type-options': 'nosniff' }
+
   const json = (value, status = 200) =>
     new Response(JSON.stringify(value), {
       status,
-      headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
+      headers: { ...SECURE, 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' },
     })
 
   const header = (request, name) => {
@@ -700,7 +704,7 @@ export function apply(ctx) {
   })
 
   const handler = (fn) => async (request, response) => {
-    const headers = { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }
+    const headers = { ...SECURE, 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' }
     const send = (status, value) => {
       // a rejected oversized body destroys the request: writing to it would throw out of the handler
       try {
@@ -809,11 +813,21 @@ export function apply(ctx) {
 
   // The scene as a stream: one connection instead of four polls a second. Only changes are written,
   // plus a keep-alive comment so a quiet scene does not look like a dead socket.
+  let streamClients = 0
+  const MAX_STREAMS = 6
   const streamHandler = (request, response) => {
     try {
-      if (!trusted(request)) { response.writeHead(403, { 'content-type': 'text/plain; charset=utf-8' }); response.end('forbidden'); return }
-      if (request.method !== 'GET') { response.writeHead(405); response.end(); return }
+      if (!trusted(request)) { response.writeHead(403, { ...SECURE, 'content-type': 'text/plain; charset=utf-8' }); response.end('forbidden'); return }
+      if (request.method !== 'GET') { response.writeHead(405, { ...SECURE }); response.end(); return }
+      // a local process can hold streams open; past a handful the cost is not worth serving
+      if (streamClients >= MAX_STREAMS) {
+        response.writeHead(503, { ...SECURE, 'content-type': 'text/plain; charset=utf-8' })
+        response.end('too many streams')
+        return
+      }
+      streamClients += 1
       response.writeHead(200, {
+        ...SECURE,
         'content-type': 'text/event-stream; charset=utf-8',
         'cache-control': 'no-store',
         connection: 'keep-alive',
@@ -830,7 +844,14 @@ export function apply(ctx) {
       push()
       const timer = setInterval(push, 250)
       const ping = setInterval(() => { try { response.write(': ping\n\n') } catch { /* closed */ } }, 15_000)
-      const stop = () => { clearInterval(timer); clearInterval(ping) }
+      let closed = false
+      const stop = () => {
+        if (closed) return
+        closed = true
+        streamClients -= 1
+        clearInterval(timer)
+        clearInterval(ping)
+      }
       request.on('close', stop)
       request.on('error', stop)
       response.on('close', stop)

@@ -79,6 +79,11 @@ check('state: LAN name refused', (await getState({ host: '192.168.1.10:49529' })
 check('state: localhost allowed', (await getState({ host: 'localhost:49529' })).status === 200)
 check('state: [::1] allowed', (await getState({ host: '[::1]:49529' })).status === 200)
 check('state: client without Host allowed', (await getState({})).status === 200)
+{
+  const plain = await getState(headers())
+  check('state: refuses MIME sniffing', plain.headers.get('x-content-type-options') === 'nosniff', String(plain.headers.get('x-content-type-options')))
+  check('state: never cached', plain.headers.get('cache-control') === 'no-store', String(plain.headers.get('cache-control')))
+}
 check('config: rebound name refused', (await getConfig({ host: 'evil.example' })).status === 403)
 
 const state = await (await getState(headers())).json()
@@ -371,8 +376,23 @@ check('breaks: it says something about a pause', ['45 минут. Разомни
   }
   routes.get('/capri/stream').handler(req, res)
   check('stream: opens as an event-stream', res.status === 200 && /text\/event-stream/.test(String(res.headers['content-type'])), String(res.status))
+  check('stream: refuses MIME sniffing', res.headers['x-content-type-options'] === 'nosniff', String(res.headers['x-content-type-options']))
   await new Promise((resolve) => setTimeout(resolve, 80))
   check('stream: sends the scene as data', events.some((line) => line.startsWith('data: ') && line.includes('"mode"') && line.includes('"seq"')), events[0] && events[0].slice(0, 40))
+
+  // a local process must not be able to hold an unbounded number of streams
+  const openStream = () => {
+    const fakeReq = new Readable({ read() {} })
+    fakeReq.method = 'GET'
+    fakeReq.headers = { get: (k) => (k.toLowerCase() === 'host' ? '127.0.0.1:49529' : undefined) }
+    const fakeRes = { status: 0, headers: {}, writeHead(s, h) { this.status = s; this.headers = h || {} }, write() {}, on() {} }
+    routes.get('/capri/stream').handler(fakeReq, fakeRes)
+    return fakeRes.status
+  }
+  const extra = [openStream(), openStream(), openStream(), openStream(), openStream()]
+  check('stream: more connections are served', extra.every((code) => code === 200), extra.join(','))
+  const seventh = openStream()
+  check('stream: past the cap it answers 503', seventh === 503, String(seventh))
 }
 
 // ── packaging: anything the modules import must survive an npm pack ──────────────────────────
