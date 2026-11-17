@@ -492,7 +492,7 @@ window.__ModuleLoader__.load({
 /* a pet drawn by a bundle that predates the owner marker: hide it instantly, before any sweep */
 .dsh-capri:not([data-capri-owned]){display:none!important}
 .dsh-capri-sprite{pointer-events:auto;cursor:grab;background:none;border:0;padding:0;display:block;
-  position:relative;line-height:0;transform-origin:50% 100%;touch-action:none;
+  position:relative;z-index:1;line-height:0;transform-origin:50% 100%;touch-action:none;
   filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));
   animation:capri-breathe 3.6s ease-in-out infinite,capri-shadow 3.6s ease-in-out infinite}
 @keyframes capri-breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2px) scale(1.004)}}
@@ -514,7 +514,7 @@ window.__ModuleLoader__.load({
 .dsh-capri-sprite img{display:block;image-rendering:auto}
 .dsh-capri-sprite:hover{filter:drop-shadow(0 0 10px rgba(255,30,90,.55)) drop-shadow(0 6px 14px rgba(0,0,0,.55))}
 .dsh-capri-preload{position:absolute;width:0;height:0;overflow:hidden;opacity:0;pointer-events:none}
-.dsh-capri-hud{display:flex;align-items:center;gap:6px;max-width:240px;font:10px/1 "JetBrains Mono",
+.dsh-capri-hud{position:relative;z-index:3;display:flex;align-items:center;gap:6px;max-width:240px;font:10px/1 "JetBrains Mono",
   ui-monospace,monospace;letter-spacing:.9px;text-transform:uppercase;
   color:var(--dsw-alias-label-secondary,#8b98a5);white-space:nowrap}
 .dsh-capri-hud .dot{width:6px;height:6px;border-radius:50%;background:#2ef2ff;box-shadow:0 0 6px #2ef2ff;flex:0 0 auto}
@@ -529,7 +529,7 @@ window.__ModuleLoader__.load({
   color:var(--dsw-alias-label-secondary,#8b98a5);font-size:13px;line-height:1;
   padding:2px 3px;border-radius:4px;cursor:pointer}
 .dsh-capri-hud .gear:hover{color:#ff1e5a}
-.dsh-capri-panel{pointer-events:none;position:relative;display:flex;gap:8px;align-items:flex-start;max-width:300px;
+.dsh-capri-panel{pointer-events:none;position:relative;z-index:4;display:flex;gap:8px;align-items:flex-start;max-width:300px;
   padding:8px 10px 9px;border:1px solid #7b3cff;border-radius:4px;
   background:linear-gradient(160deg,rgba(10,13,18,.97),rgba(6,9,14,.97));color:#eef4f8;
   box-shadow:0 0 0 1px rgba(0,0,0,.7),0 10px 26px rgba(0,0,0,.6),inset 0 0 22px rgba(123,60,255,.12)}
